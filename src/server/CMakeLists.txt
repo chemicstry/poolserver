@@ -1,0 +1,11 @@
+if(POOLSERVER)
+  add_subdirectory(shared)
+  add_subdirectory(poolserver)
+endif()
+
+if(STATSSERVER)
+  if(NOT POOLSERVER)
+    add_subdirectory(shared)
+  endif()
+  add_subdirectory(statsserver)
+endif()
