@@ -1,5 +1,5 @@
-#ifndef DATABASE_H
-#define DATABASE_H
+#ifndef DATABASE_H_
+#define DATABASE_H_
 
 class Database;
 class ResultSet;

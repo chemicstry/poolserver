@@ -1,5 +1,5 @@
-#ifndef STRATUM_SERVER_H
-#define STRATUM_SERVER_H
+#ifndef STRATUM_SERVER_H_
+#define STRATUM_SERVER_H_
 
 #include <boost/cstdint.hpp>
 #include <string>

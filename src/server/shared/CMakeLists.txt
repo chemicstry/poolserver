@@ -26,7 +26,3 @@ include_directories(
 add_library(shared STATIC
   ${sources_Shared}
 )
-
-target_link_libraries(shared
-  ${ACE_LIBRARY}
-)
