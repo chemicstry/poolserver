@@ -23,6 +23,8 @@ public:
 
     int Run();
     void Update(uint32_t);
+    
+    bool InitDatabase();
 };
 
 #endif

@@ -1,10 +1,12 @@
 
 # Add sources
 file(GLOB_RECURSE sources_Server Server/*.cpp Server/*.h)
+file(GLOB_RECURSE sources_Database Database/*.cpp Database/*.h)
 file(GLOB sources_localdir *.cpp *.h)
 
 set(sources_Poolserver
   ${sources_Server}
+  ${sources_Database}
   ${sources_localdir}
 )
 
@@ -14,6 +16,7 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/src/server/shared/Database
   ${CMAKE_SOURCE_DIR}/src/server/shared/Logging
   ${CMAKE_SOURCE_DIR}/src/server/poolserver/Server
+  ${CMAKE_SOURCE_DIR}/src/server/poolserver/Database
   ${Boost_INCLUDE_DIR}
   ${MYSQL_INCLUDE_DIR}
 )
@@ -22,7 +25,6 @@ include_directories(
 add_executable(poolserver
   ${sources_Poolserver}
 )
-message(status "SHared files: ${sources_Shared}")
 
 # Link libraries
 target_link_libraries(poolserver

@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstdarg>
 #include <boost/cstdint.hpp>
+#include <boost/thread.hpp>
 
 #define MAX_MSG_LEN 32*1024
 #define ATTR_PRINTF(F, V) __attribute__ ((format (printf, F, V)))
@@ -14,7 +15,8 @@
 enum LogType
 {
 	LOG_GENERAL 					= 0,
-	LOG_SERVER						= 2,
+	LOG_SERVER						= 1,
+    LOG_DATABASE                    = 2
 };
 
 enum LogLevel
@@ -46,6 +48,8 @@ private:
 	
 	std::string logfileloc;
 	std::ofstream logfile;
+    
+    boost::mutex _mutex;
 };
 
 extern Log sLog;

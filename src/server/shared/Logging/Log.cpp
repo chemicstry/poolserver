@@ -72,6 +72,8 @@ void Log::OpenLogFile(std::string path)
 
 void Log::Write(LogLevel level, LogType type, std::string msg)
 {
+    boost::lock_guard<boost::mutex> lock(_mutex);
+    
 	switch(level)
 	{
 		case LOG_LEVEL_ERROR:

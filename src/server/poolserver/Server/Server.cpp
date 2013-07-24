@@ -2,8 +2,10 @@
 #include "Config.h"
 #include "Log.h"
 #include "Stratum/Server.h"
+#include "ServerDatabaseEnv.h"
 
 #include <boost/thread.hpp>
+#include <boost/algorithm/string.hpp>
 #include <iostream>
 
 Server::Server() : serverLoops(0)
@@ -18,6 +20,11 @@ Server::~Server()
 int Server::Run()
 {
 	sLog.Info(LOG_SERVER, "Server is starting...");
+    
+    InitDatabase();
+    
+    sDatabase.Execute("INSERT INTO `test_table` VALUES ('999', 'sync', '1.1')");
+    sDatabase.ExecuteAsync("INSERT INTO `test_table` VALUES ('999', 'sync', '1.1')");
 	
     // Start stratum server
 	sLog.Info(LOG_SERVER, "Starting stratum");
@@ -59,6 +66,8 @@ int Server::Run()
     }
     
     sLog.Info(LOG_SERVER, "Server is stopping...");
+    
+    sDatabase.Close();
 
     return exitcode;
 }
@@ -67,3 +76,20 @@ void Server::Update(uint32_t diff)
 {
 
 }
+
+bool Server::InitDatabase()
+{
+    if (boost::iequals(sConfig.Get<std::string>("DatabaseDriver"), "mysql")) {
+        MySQLConnectionInfo connInfo;
+        connInfo.Host = sConfig.Get<std::string>("MySQLHost");
+        connInfo.Port = sConfig.Get<uint16_t>("MySQLPort");
+        connInfo.User = sConfig.Get<std::string>("MySQLUser");
+        connInfo.Pass = sConfig.Get<std::string>("MySQLPass");
+        connInfo.DB = sConfig.Get<std::string>("MySQLDatabase");
+        return sDatabase.Open(connInfo, sConfig.Get<uint16_t>("MySQLSyncThreads"), sConfig.Get<uint16_t>("MySQLAsyncThreads"));
+    } else {
+        sLog.Error(LOG_SERVER, "Database Driver '%s' not found.", sConfig.Get<std::string>("DatabaseDriver").c_str());
+        return false;
+    }
+}
+
