@@ -10,7 +10,7 @@
 
 namespace Util
 {
-	std::string Date(const char* format, bool utc = false);
+    std::string Date(const char* format, bool utc = false);
     
     template <typename T>
     class SynchronisedQueue

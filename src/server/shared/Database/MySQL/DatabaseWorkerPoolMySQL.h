@@ -69,14 +69,14 @@ public:
     }
     
     // Queries
-	bool Execute(const char* query)
+    bool Execute(const char* query)
     {
         DatabaseConnectionMySQL* conn = GetSyncConnection();
         bool result = conn->Execute(query);
         conn->Unlock();
         return result;
     }
-	ResultSetMySQL* Query(const char* query)
+    ResultSetMySQL* Query(const char* query)
     {
         DatabaseConnectionMySQL* conn = GetSyncConnection();
         ResultSetMySQL* result = conn->Query(query);
@@ -92,7 +92,7 @@ public:
         conn->Unlock();
         return result;
     }
-	ResultSetMySQL* Query(PreparedStatement* stmt)
+    ResultSetMySQL* Query(PreparedStatement* stmt)
     {
         DatabaseConnectionMySQL* conn = GetSyncConnection();
         ResultSetMySQL* result = conn->Query(stmt);
@@ -113,21 +113,21 @@ public:
         _asyncQueue->Enqueue(op);
         return true;
     }
-	bool QueryAsync(DatabaseCallback callback, const char* query)
+    bool QueryAsync(DatabaseCallback callback, const char* query)
     {
         DatabaseQueryOperationMySQL* op = new DatabaseQueryOperationMySQL(query, callback);
         _asyncQueue->Enqueue(op);
         return true;
     }
-	bool QueryAsync(DatabaseCallback callback, PreparedStatement* stmt)
+    bool QueryAsync(DatabaseCallback callback, PreparedStatement* stmt)
     {
         DatabasePreparedStatementOperationMySQL* op = new DatabasePreparedStatementOperationMySQL(stmt, callback);
         _asyncQueue->Enqueue(op);
         return true;
     }
     
-	// Prepared Statements
-	PreparedStatement* GetPreparedStatement(uint32_t stmtid)
+    // Prepared Statements
+    PreparedStatement* GetPreparedStatement(uint32_t stmtid)
     {
         return NULL;//new PreparedStatement(stmtid);
     }

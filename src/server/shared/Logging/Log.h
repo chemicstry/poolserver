@@ -14,40 +14,40 @@
 
 enum LogType
 {
-	LOG_GENERAL 					= 0,
-	LOG_SERVER						= 1,
+    LOG_GENERAL                     = 0,
+    LOG_SERVER                        = 1,
     LOG_DATABASE                    = 2
 };
 
 enum LogLevel
 {
-	LOG_LEVEL_NONE					= 0,
-	LOG_LEVEL_ERROR					= 1,
-	LOG_LEVEL_WARN					= 2,
-	LOG_LEVEL_INFO					= 3,
-	LOG_LEVEL_DEBUG 				= 4
+    LOG_LEVEL_NONE                    = 0,
+    LOG_LEVEL_ERROR                    = 1,
+    LOG_LEVEL_WARN                    = 2,
+    LOG_LEVEL_INFO                    = 3,
+    LOG_LEVEL_DEBUG                 = 4
 };
 
 class Log
 {
 public:
-	Log();
-	~Log();
-	
-	void Error(LogType type, const char * str, ...) ATTR_PRINTF(3, 4);
-	void Warn(LogType type, const char * str, ...) ATTR_PRINTF(3, 4);
-	void Info(LogType type, const char * str, ...) ATTR_PRINTF(3, 4);
-	void Debug(LogType type, const char * str, ...) ATTR_PRINTF(3, 4);
-	
-	void OpenLogFile(std::string filename);
-	std::string logFileLoc;
-	
+    Log();
+    ~Log();
+    
+    void Error(LogType type, const char * str, ...) ATTR_PRINTF(3, 4);
+    void Warn(LogType type, const char * str, ...) ATTR_PRINTF(3, 4);
+    void Info(LogType type, const char * str, ...) ATTR_PRINTF(3, 4);
+    void Debug(LogType type, const char * str, ...) ATTR_PRINTF(3, 4);
+    
+    void OpenLogFile(std::string filename);
+    std::string logFileLoc;
+    
 private:
-	void Write(LogLevel level, LogType type, std::string msg);
-	void AppendFile(std::string);
-	
-	std::string logfileloc;
-	std::ofstream logfile;
+    void Write(LogLevel level, LogType type, std::string msg);
+    void AppendFile(std::string);
+    
+    std::string logfileloc;
+    std::ofstream logfile;
     
     boost::mutex _mutex;
 };

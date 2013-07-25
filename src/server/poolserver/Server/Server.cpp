@@ -19,27 +19,27 @@ Server::~Server()
 
 int Server::Run()
 {
-	sLog.Info(LOG_SERVER, "Server is starting...");
+    sLog.Info(LOG_SERVER, "Server is starting...");
     
     InitDatabase();
     
     sDatabase.Execute("INSERT INTO `test_table` VALUES ('999', 'sync', '1.1')");
     sDatabase.ExecuteAsync("INSERT INTO `test_table` VALUES ('999', 'sync', '1.1')");
-	
+    
     // Start stratum server
-	sLog.Info(LOG_SERVER, "Starting stratum");
+    sLog.Info(LOG_SERVER, "Starting stratum");
     //stratumServer = new Stratum::Server(Config::GetString("STRATUM_IP"), Config::GetInt("STRATUM_PORT"));
-	
+    
     // Init loop vars
     uint32_t sleepDuration = 0;
     int exitcode = 0;
     running = true;
 
     // Init diff
-	uint32_t minDiffTime = sConfig.Get<uint32_t>("MinDiffTime");
+    uint32_t minDiffTime = sConfig.Get<uint32_t>("MinDiffTime");
     diffStart = boost::chrono::steady_clock::now();
-	
-	sLog.Info(LOG_SERVER, "Server is running!");
+    
+    sLog.Info(LOG_SERVER, "Server is running!");
 
     while (running)
     {
@@ -60,8 +60,8 @@ int Server::Run()
 
         ++serverLoops;
 
-		if (serverLoops > 50)
-			running = false;
+        if (serverLoops > 50)
+            running = false;
         //std::cout << "Diff: " << diff << ", Loop: " << serverLoops << std::endl;
     }
     

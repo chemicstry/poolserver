@@ -35,18 +35,18 @@ public:
     void Close();
     
     // Ping!
-	void Ping()
+    void Ping()
     {
         mysql_ping(_mysql);
     }
-	
-	// Queries
-	bool Execute(const char* query);
-	ResultSetMySQL* Query(const char* query);
+    
+    // Queries
+    bool Execute(const char* query);
+    ResultSetMySQL* Query(const char* query);
     
     // Stmt
     bool Execute(PreparedStatement* stmt);
-	ResultSetMySQL* Query(PreparedStatement* stmt);
+    ResultSetMySQL* Query(PreparedStatement* stmt);
     
     // Locking
     bool LockIfReady()
