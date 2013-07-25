@@ -1,21 +1,20 @@
-#include <iostream>
-
 #include "Server.h"
 #include "Config.h"
 #include "Log.h"
 #include <boost/program_options.hpp>
 #include <iostream>
+#include <fstream>
 
 bool InitConfig(int argc, char *argv[])
 {
     // Containers
-    boost::program_options::options_description descGeneric;
-	boost::program_options::options_description descServer;
-	boost::program_options::options_description descStratum;
-	boost::program_options::options_description descLogging;
-    boost::program_options::options_description descDatabase;
+    boost::program_options::options_description descGeneric("Generic Options");
+	boost::program_options::options_description descServer("Server Configuration");
+	boost::program_options::options_description descStratum("Stratum Configuration");
+	boost::program_options::options_description descLogging("Logging Configuration");
+    boost::program_options::options_description descDatabase("Database Configuration");
     #ifdef WITH_MYSQL
-        boost::program_options::options_description descMySQL;
+        boost::program_options::options_description descMySQL("MySQL Configuration");
     #endif
 	boost::program_options::options_description cmdlineOptions;
 	boost::program_options::options_description fileOptions;
@@ -24,7 +23,7 @@ bool InitConfig(int argc, char *argv[])
     descGeneric.add_options()
 		("version,v", "print version string")
 		("help,h", "produce help message")
-		("config,c", boost::program_options::value<std::string>()->default_value("settings.cfg"),"name of a file of a configuration.")
+		("config,c", boost::program_options::value<std::string>()->default_value("poolserver.cfg"),"name of a file of a configuration.")
     ;
 	
 	// Server
@@ -78,7 +77,7 @@ bool InitConfig(int argc, char *argv[])
     std::ifstream ifs(sConfig.Get<std::string>("config").c_str());
 	
 	if (!ifs.is_open()) {
-        sLog.Error(LOG_GENERAL, "Failed opening config file: %s", sConfig.Get<std::string>("LogFilePath").c_str());
+        sLog.Error(LOG_GENERAL, "Failed opening config file: %s", sConfig.Get<std::string>("config").c_str());
 		return false;
 	}
     

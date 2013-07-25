@@ -1,0 +1,164 @@
+#############################
+# Server Configuration File
+#############################
+
+###################################################################################################
+# SECTION INDEX
+#
+#    SERVER CONFIGURATION
+#    STRATUM CONFIGURATION
+#    DATABASE CONFIGURATION
+#    MYSQL CONFIGURATION
+#
+###################################################################################################
+
+###################################################################################################
+# EXAMPLE CONFIG
+#
+#    Variable
+#        Description: Brief description what the variable is doing.
+#        Important:   Annotation for important things about this variable.
+#        Example:     "Example, i.e. if the value is a string"
+#        Default:     10 - (Enabled|Comment|Variable name in case of grouped config options)
+#                     0  - (Disabled|Comment|Variable name in case of grouped config options)
+#
+# Note to developers:
+# - Copy this example to keep the formatting.
+# - Line breaks should be at column 100.
+###################################################################################################
+
+[Server Configuration]
+
+###################################################################################################
+# SERVER CONFIGURATION
+#
+#    MinDiffTime
+#        Description: Minimum diff time (ms) in main server loop.
+#        Important:   Lowering this value increases cpu load but new packets are processed faster
+#        Default:     100
+
+MinDiffTime=100
+
+#
+###################################################################################################
+
+[Stratum Configuration]
+
+###################################################################################################
+# STRATUM CONFIGURATION
+#
+#    StratumHost
+#        Description: Bind stratum to IP/Hostname
+#        Default:     "0.0.0.0" - (Bind to all IPs on the system)
+
+StratumHost="0.0.0.0"
+
+#
+#    StratumPort
+#        Description: Stratum Port
+#        Default:     3333
+
+StratumPort=3333
+
+#
+###################################################################################################
+
+[Logging Configuration]
+
+###################################################################################################
+# LOGGING CONFIGURATION
+#
+#    LogFilePath
+#        Description: Location to save logfile to
+#        Important:   Do not add trailing slash
+#        Example:     "/var/log"
+#        Default:     "." - (Save log file next to executable)
+
+LogFilePath="."
+
+#
+#    LogConsoleLevel
+#    LogFileLevel
+#        Description: Logging output level
+#        Default:     0 - (Disabled)
+#                     1 - (Error)
+#                     2 - (Warning|LogFileLevel)
+#                     3 - (Info|LogConsoleLevel)
+#                     4 - (Debug|Set apropriate Log...DebugMask for debug output)
+
+LogConsoleLevel=4
+LogFileLevel=4
+
+#
+#    LogConsoleDebugMask
+#    LogFileDebugMask
+#        Description: Debug output mask
+#        Example:     5 - (1+4|Ouput LOG_GENERAL and LOG_DATABASE)
+#        Default:     0 - (Disabled)
+#                     1 - (LOG_GENERAL)
+#                     2 - (LOG_SERVER)
+#                     4 - (LOG_DATABASE)
+
+LogConsoleDebugMask=0
+LogFileDebugMask=0
+
+#
+###################################################################################################
+
+[Database Configuration]
+
+###################################################################################################
+# DATABASE CONFIGURATION
+#
+#    DatabaseDriver
+#        Description: Database driver to use for data storage
+#        Important:   Server must be compiled with selected driver support
+#        Example:     "mysql"
+#        Default:     "." - (Save log file next to executable)
+
+DatabaseDriver="mysql"
+
+#
+###################################################################################################
+
+[MySQL Configuration]
+
+###################################################################################################
+# MYSQL CONFIGURATION
+#
+#    MySQLHost
+#        Description: IP/Hostname of MySQL Server
+#        Default:     "127.0.0.1" - (Connect to localhost)
+
+MySQLHost="127.0.0.1"
+
+#
+#    MySQLPort
+#        Description: MySQL Server Port
+#        Default:     3306 - (Default MySQL Server Port)
+
+MySQLPort=3306
+
+#
+#    MySQLUser
+#        Description: MySQL Server Username
+#        Default:     "" - (No Username)
+
+MySQLUser=""
+
+#
+#    MySQLPass
+#        Description: MySQL Server Password
+#        Default:     "" - (No Password)
+
+MySQLPass=""
+
+#
+#    MySQLDatabase
+#        Description: Name of MySQL Database
+#        Default:     "poolserver"
+
+MySQLDatabase="poolserver"
+
+#
+###################################################################################################

@@ -20,6 +20,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/Configuration
   ${CMAKE_CURRENT_SOURCE_DIR}/Database
   ${CMAKE_CURRENT_SOURCE_DIR}/Logging
+  ${Boost_INCLUDE_DIR}
   ${MYSQL_INCLUDE_DIR}
 )
 

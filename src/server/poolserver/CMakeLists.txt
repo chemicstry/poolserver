@@ -29,15 +29,15 @@ add_executable(poolserver
 # Link libraries
 target_link_libraries(poolserver
   shared
-  ${MYSQL_LIBRARY}
   ${Boost_LIBRARIES}
-  /usr/local/lib/libboost_thread.so.1.53.0
-  /usr/local/lib/libboost_program_options.so
+  ${MYSQL_LIBRARY}
 )
 
 # Install
 if(UNIX)
   install(TARGETS poolserver DESTINATION bin)
+  install(FILES poolserver.cfg.dist DESTINATION bin)
 elseif(WIN32)
   install(TARGETS poolserver DESTINATION "${CMAKE_INSTALL_PREFIX}")
+  install(FILES poolserver.cfg.dist DESTINATION "${CMAKE_INSTALL_PREFIX}")
 endif()
