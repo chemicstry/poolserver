@@ -15,6 +15,8 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/src/server/shared/Configuration
   ${CMAKE_SOURCE_DIR}/src/server/shared/Database
   ${CMAKE_SOURCE_DIR}/src/server/shared/Logging
+  ${CMAKE_SOURCE_DIR}/src/server/shared/JSON
+  ${CMAKE_SOURCE_DIR}/src/server/shared/JSONRPC
   ${CMAKE_SOURCE_DIR}/src/server/poolserver/Server
   ${CMAKE_SOURCE_DIR}/src/server/poolserver/Database
   ${Boost_INCLUDE_DIR}

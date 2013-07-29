@@ -4,9 +4,15 @@
 #include <sstream>
 #include <iostream>
 #include <queue>
+#include <string>
 #include <boost/date_time.hpp>
 #include <boost/thread.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/archive/iterators/base64_from_binary.hpp>
+#include <boost/archive/iterators/binary_from_base64.hpp>
+#include <boost/archive/iterators/transform_width.hpp>
+#include <boost/archive/iterators/insert_linebreaks.hpp>
+#include <boost/archive/iterators/remove_whitespace.hpp>
 
 namespace Util
 {
@@ -73,6 +79,29 @@ namespace Util
         virtual void Work() = 0;
         boost::thread* _thread;
     };
+    
+    // Base64 encode/decode functions by http://stackoverflow.com/users/1132850/piquer
+    
+    typedef boost::archive::iterators::insert_linebreaks
+            <
+                boost::archive::iterators::base64_from_binary
+                <
+                    boost::archive::iterators::transform_width<std::string::const_iterator, 6, 8>
+                >, 72
+            > it_base64_lb_t;
+    
+    typedef boost::archive::iterators::base64_from_binary
+            <
+                boost::archive::iterators::transform_width<std::string::const_iterator, 6, 8>
+            > it_base64_t;
+    
+    typedef boost::archive::iterators::transform_width
+            <
+                boost::archive::iterators::binary_from_base64<std::string::const_iterator>, 8, 6
+            > it_binary_t;
+    
+    std::string ToBase64(std::string input, bool linebreaks = true);
+    std::string FromBase64(std::string input);
 }
 
 #endif

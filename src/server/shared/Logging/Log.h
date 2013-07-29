@@ -14,18 +14,20 @@
 
 enum LogType
 {
-    LOG_GENERAL                     = 0,
-    LOG_SERVER                        = 1,
-    LOG_DATABASE                    = 2
+    LOG_GENERAL                         = 0,
+    LOG_SERVER                          = 1,
+    LOG_DATABASE                        = 2,
+    LOG_JSON                            = 3,
+    LOG_JSONRPC                         = 4
 };
 
 enum LogLevel
 {
-    LOG_LEVEL_NONE                    = 0,
-    LOG_LEVEL_ERROR                    = 1,
-    LOG_LEVEL_WARN                    = 2,
-    LOG_LEVEL_INFO                    = 3,
-    LOG_LEVEL_DEBUG                 = 4
+    LOG_LEVEL_NONE                      = 0,
+    LOG_LEVEL_ERROR                     = 1,
+    LOG_LEVEL_WARN                      = 2,
+    LOG_LEVEL_INFO                      = 3,
+    LOG_LEVEL_DEBUG                     = 4
 };
 
 class Log

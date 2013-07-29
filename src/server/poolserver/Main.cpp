@@ -1,9 +1,14 @@
 #include "Server.h"
 #include "Config.h"
 #include "Log.h"
+#include "Util.h"
+#include "JSON.h"
+#include "JSONRPC.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <fstream>
+#include <vector>
+#include <string>
 
 bool InitConfig(int argc, char *argv[])
 {
@@ -78,7 +83,7 @@ bool InitConfig(int argc, char *argv[])
     
     if (!ifs.is_open()) {
         sLog.Error(LOG_GENERAL, "Failed opening config file: %s", sConfig.Get<std::string>("config").c_str());
-        return false;
+        return true;
     }
     
     store(parse_config_file(ifs, fileOptions), sConfig.vm);
