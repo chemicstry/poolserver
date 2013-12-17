@@ -126,8 +126,7 @@ namespace MySQL
         if (!result)
             return false;
 
-        if (!rowCount)
-        {
+        if (!rowCount) {
             mysql_free_result(*result);
             return false;
         }
@@ -136,17 +135,125 @@ namespace MySQL
         
         return true;
     }
+    
+    bool DatabaseConnection::_Query(PreparedStatement* stmt, MYSQL_RES** result, MYSQL_STMT** resultSTMT, uint64& rowCount, uint32& fieldCount)
+    {
+        if (!_mysql)
+            return false;
+        
+        ConnectionPreparedStatement* cstmt = GetPreparedStatement(stmt->_index);
+        
+        if (!cstmt) {
+            sLog.Error(LOG_DATABASE, "STMT id: %u not found!", stmt->_index);
+            return false;
+        }
+        
+        cstmt->BindParameters(stmt);
+        
+        MYSQL_STMT* mSTMT = cstmt->GetSTMT();
+        MYSQL_BIND* mBIND = cstmt->GetBind();
+        
+        if (mysql_stmt_bind_param(mSTMT, mBIND))
+        {
+            uint32 lErrno = mysql_errno(_mysql);
+            sLog.Error(LOG_DATABASE, "STMT Execute Error[%u]: %s", lErrno, mysql_stmt_error(mSTMT));
+
+            if (_HandleMySQLErrno(lErrno))  // If it returns true, an error was handled successfully (i.e. reconnection)
+                return Execute(stmt);       // Try again
+
+            cstmt->ClearParameters();
+            return false;
+        }
+
+        if (mysql_stmt_execute(mSTMT))
+        {
+            uint32 lErrno = mysql_errno(_mysql);
+            sLog.Error(LOG_DATABASE, "STMT Execute Error[%u]: %s", lErrno, mysql_stmt_error(mSTMT));
+
+            if (_HandleMySQLErrno(lErrno))  // If it returns true, an error was handled successfully (i.e. reconnection)
+                return _Query(stmt, result, resultSTMT, rowCount, fieldCount);       // Try again
+
+            cstmt->ClearParameters();
+            return false;
+        }
+
+        cstmt->ClearParameters();
+        
+        *result = mysql_stmt_result_metadata(mSTMT);
+        rowCount = mysql_stmt_num_rows(mSTMT);
+        fieldCount = mysql_stmt_field_count(mSTMT);
+        *resultSTMT = mSTMT;
+        
+        return true;
+    }
 
     bool DatabaseConnection::Execute(PreparedStatement* stmt)
     {
+        if (!_mysql)
+            return false;
+        
+        ConnectionPreparedStatement* cstmt = GetPreparedStatement(stmt->_index);
+        
+        if (!cstmt) {
+            sLog.Error(LOG_DATABASE, "STMT id: %u not found!", stmt->_index);
+            return false;
+        }
+        
+        cstmt->BindParameters(stmt);
+        
+        MYSQL_STMT* mSTMT = cstmt->GetSTMT();
+        MYSQL_BIND* mBIND = cstmt->GetBind();
+        
+        if (mysql_stmt_bind_param(mSTMT, mBIND))
+        {
+            uint32 lErrno = mysql_errno(_mysql);
+            sLog.Error(LOG_DATABASE, "STMT Execute Error[%u]: %s", lErrno, mysql_stmt_error(mSTMT));
+
+            if (_HandleMySQLErrno(lErrno))  // If it returns true, an error was handled successfully (i.e. reconnection)
+                return Execute(stmt);       // Try again
+
+            cstmt->ClearParameters();
+            return false;
+        }
+
+        if (mysql_stmt_execute(mSTMT))
+        {
+            uint32 lErrno = mysql_errno(_mysql);
+            sLog.Error(LOG_DATABASE, "STMT Execute Error[%u]: %s", lErrno, mysql_stmt_error(mSTMT));
+
+            if (_HandleMySQLErrno(lErrno))  // If it returns true, an error was handled successfully (i.e. reconnection)
+                return Execute(stmt);       // Try again
+
+            cstmt->ClearParameters();
+            return false;
+        }
+
+        cstmt->ClearParameters();
+        
+        return true;
     }
 
     ResultSet* DatabaseConnection::Query(PreparedStatement* stmt)
     {
+        MYSQL_RES* result = NULL;
+        MYSQL_STMT* resultSTMT = NULL;
+        uint64 rowCount = 0;
+        uint32 fieldCount = 0;
+
+        if (!_Query(stmt, &result, &resultSTMT, rowCount, fieldCount))
+            return NULL;
+
+        if (mysql_more_results(_mysql))
+            mysql_next_result(_mysql);
+        
+        return new ResultSet(result, resultSTMT, rowCount, fieldCount);
     }
     
-    void DatabaseConnection::PrepareStatement(uint32 index, const char* sql)
+    bool DatabaseConnection::PrepareStatement(uint32 index, const char* sql)
     {
+        if (!_mysql)
+            return false;
+        
         // For reconnection case
         //if (m_reconnecting)
         //    delete m_stmts[index];
@@ -156,16 +263,30 @@ namespace MySQL
         if (!stmt) {
             sLog.Error(LOG_DATABASE, "In mysql_stmt_init() id: %u, sql: \"%s\"", index, sql);
             sLog.Error(LOG_DATABASE, "%s", mysql_error(_mysql));
-        } else {
-            if (mysql_stmt_prepare(stmt, sql, strlen(sql))) {
-                sLog.Error(LOG_DATABASE, "In mysql_stmt_init() id: %u, sql: \"%s\"", index, sql);
-                sLog.Error(LOG_DATABASE, "%s", mysql_stmt_error(stmt));
-                mysql_stmt_close(stmt);
-            } else {
-                PreparedStatement* mStmt = new PreparedStatement(stmt);
-                _stmts[index] = mStmt;
-            }
+            return false;
         }
+        
+        if (mysql_stmt_prepare(stmt, sql, strlen(sql))) {
+            sLog.Error(LOG_DATABASE, "In mysql_stmt_init() id: %u, sql: \"%s\"", index, sql);
+            sLog.Error(LOG_DATABASE, "%s", mysql_stmt_error(stmt));
+            mysql_stmt_close(stmt);
+            return false;
+        }
+        
+        // Set flags to update max_length property
+        my_bool mysql_c_api_sucks = true;
+        mysql_stmt_attr_set(stmt, STMT_ATTR_UPDATE_MAX_LENGTH, (void*)&mysql_c_api_sucks);
+        
+        // Resize stmt vector
+        if (index >= _stmts.size())
+            _stmts.resize(index+1);
+        
+        ConnectionPreparedStatement* mStmt = new ConnectionPreparedStatement(stmt);
+        _stmts[index] = mStmt;
+        
+        sLog.Debug(LOG_DATABASE, "Prepared STMT id: %u, sql: \"%s\"", index, sql);
+        
+        return true;
     }
 
     bool DatabaseConnection::_HandleMySQLErrno(uint32_t lErrno)

@@ -1,6 +1,7 @@
 #ifndef DATABASE_WORKER_POOL_MYSQL_H_
 #define DATABASE_WORKER_POOL_MYSQL_H_
 
+#include "Common.h"
 #include "DatabaseConnection.h"
 #include "PreparedStatement.h"
 #include "QueryResult.h"
@@ -19,7 +20,7 @@ namespace MySQL
             delete _asyncQueue;
         }
         
-        bool Open(ConnectionInfo connInfo, uint8_t syncThreads, uint8_t asyncThreads);
+        bool Open(ConnectionInfo connInfo, uint8 syncThreads, uint8 asyncThreads);
         
         void Close();
         
@@ -81,19 +82,20 @@ namespace MySQL
             return true;
         }
         
-        bool PrepareStatement(index, const char* sql, PreparedStatementFlags flags);
+        virtual void LoadSTMT() = 0;
+        bool PrepareStatement(uint32 index, const char* sql, PreparedStatementFlags flags);
         
         // Prepared Statements
-        PreparedStatement* GetPreparedStatement(uint32_t stmtid)
+        PreparedStatement* GetPreparedStatement(uint32 stmtid)
         {
-            return NULL;//new PreparedStatement(stmtid);
+            return new PreparedStatement(stmtid);
         }
         
     private:
         DatabaseConnection* GetSyncConnection()
         {
-            uint32_t i;
-            uint8_t conn_size = _connections[MYSQL_CONN_SYNC].size();
+            uint32 i;
+            uint8 conn_size = _connections[MYSQL_CONN_SYNC].size();
             DatabaseConnection* conn = NULL;
             
             // Block until we find a free connection

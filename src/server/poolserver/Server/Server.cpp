@@ -20,10 +20,8 @@ Server::~Server()
 void AsyncQueryCallback(MySQL::QueryResult result)
 {
     sLog.Info(LOG_SERVER, "Metadata: F: %u R: %u", result->GetFieldCount(), result->GetRowCount());
-    while (result->NextRow()) {
-        MySQL::Field* fields = result->Fetch();
-        sLog.Info(LOG_SERVER, "Row: %i %s", fields[0].GetUInt32(), 
-        fields[1].GetString().c_str());
+    while (MySQL::Field* fields = result->FetchRow()) {
+        sLog.Info(LOG_SERVER, "Row: %i %s", fields[0].GetUInt32(), fields[1].GetString().c_str());
     }
 }
 
@@ -36,14 +34,25 @@ int Server::Run()
     //sDatabase.Execute("INSERT INTO `test_table` VALUES ('999', 'sync', '1.1')");
     //sDatabase.ExecuteAsync("INSERT INTO `test_table` VALUES ('999', 'sync', '1.1')");
     
-    sDatabase.QueryAsync("SELECT * FROM `test_table`", &AsyncQueryCallback);
-    MySQL::QueryResult result = sDatabase.Query("SELECT * FROM `test_table`");
-    sLog.Info(LOG_SERVER, "Metadata: F: %u R: %u", result->GetFieldCount(), result->GetRowCount());
-    while (result->NextRow()) {
-        MySQL::Field* fields = result->Fetch();
-        sLog.Info(LOG_SERVER, "Row: %i %s", fields[0].GetUInt32(), 
-        fields[1].GetString().c_str());
-    }
+    /*MySQL::PreparedStatement* stmt = sDatabase.GetPreparedStatement(STMT_INSERT_SHIT);
+    stmt->SetUInt32(0, 10);
+    stmt->SetString(1, "hello");
+    stmt->SetFloat(2, 5.987);
+    sDatabase.ExecuteAsync(stmt);*/
+    
+    MySQL::PreparedStatement* stmt = sDatabase.GetPreparedStatement(STMT_QUERY_TEST_TABLE);
+    MySQL::QueryResult result = sDatabase.Query(stmt);
+    
+    
+    //sDatabase.QueryAsync("SELECT * FROM `test_table`", &AsyncQueryCallback);
+    //MySQL::QueryResult result = sDatabase.Query("SELECT * FROM `test_table`");
+    if (result) {
+        sLog.Info(LOG_SERVER, "Metadata: F: %u R: %u", result->GetFieldCount(), result->GetRowCount());
+        while (MySQL::Field* fields = result->FetchRow()) {
+            sLog.Info(LOG_SERVER, "Row: %i %s", fields[0].GetUInt32(), fields[1].GetString().c_str());
+        }
+    } else
+        sLog.Info(LOG_SERVER, "Empty result");
     
     // Start stratum server
     sLog.Info(LOG_SERVER, "Starting stratum");

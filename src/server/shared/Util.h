@@ -1,13 +1,14 @@
 #ifndef UTIL_H_
 #define UTIL_H_
 
+#include <Common.h>
+
 #include <sstream>
 #include <iostream>
 #include <queue>
 #include <string>
 #include <boost/date_time.hpp>
 #include <boost/thread.hpp>
-#include <boost/cstdint.hpp>
 #include <boost/archive/iterators/base64_from_binary.hpp>
 #include <boost/archive/iterators/binary_from_base64.hpp>
 #include <boost/archive/iterators/transform_width.hpp>

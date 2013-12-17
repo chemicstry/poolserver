@@ -5,6 +5,7 @@
 #include "DatabaseWorker.h"
 #include "QueryResult.h"
 #include "PreparedStatement.h"
+#include "Log.h"
 
 #include <boost/thread.hpp>
 #include <mysql.h>
@@ -63,10 +64,18 @@ namespace MySQL
         
         ConnectionType Type;
         
-        void PrepareStatement(uint32_t index, const char* sql);
+        bool PrepareStatement(uint32_t index, const char* sql);
+        
+        ConnectionPreparedStatement* GetPreparedStatement(uint32 index)
+        {
+            if (index >= _stmts.size())
+                return NULL;
+            return _stmts[index];
+        }
         
     private:
-        bool _Query(const char *sql, MYSQL_RES** result, MYSQL_FIELD** fields, uint64_t& pRowCount, uint32_t& pFieldCount);
+        bool _Query(const char *sql, MYSQL_RES** result, MYSQL_FIELD** fields, uint64& rowCount, uint32& fieldCount);
+        bool _Query(PreparedStatement* stmt, MYSQL_RES** result, MYSQL_STMT** resultSTMT, uint64& rowCount, uint32& fieldCount);
         
         bool _HandleMySQLErrno(uint32_t lErrno);
         
@@ -74,7 +83,7 @@ namespace MySQL
         MYSQL* _mysql;
         DatabaseWorkQueue* _asyncQueue;
         DatabaseWorker* _worker;
-        std::vector<PreparedStatement*> _stmts;
+        std::vector<ConnectionPreparedStatement*> _stmts;
         ConnectionInfo _connectionInfo;
     };
 }

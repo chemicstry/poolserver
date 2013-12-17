@@ -28,6 +28,8 @@ namespace MySQL
         else
             sLog.Error(LOG_DATABASE, "Failed opening MySQL Database Pool to '%s'.", _connectionInfo.DB.c_str());
         
+        LoadSTMT();
+        
         return res;
     }
     
@@ -53,7 +55,7 @@ namespace MySQL
         sLog.Info(LOG_DATABASE, "Closed all connections to MySQL Database Pool '%s'.", _connectionInfo.DB.c_str());
     }
     
-    bool DatabaseWorkerPool::PrepareStatement(index, const char* sql, PreparedStatementFlags flags)
+    bool DatabaseWorkerPool::PrepareStatement(uint32 index, const char* sql, PreparedStatementFlags flags)
     {
         if (flags & STMT_SYNC) {
             for (uint8_t i = 0; i < _connections[MYSQL_CONN_SYNC].size(); ++i) {
