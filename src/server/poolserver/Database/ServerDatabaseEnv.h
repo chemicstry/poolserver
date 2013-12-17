@@ -1,9 +1,9 @@
 #ifndef SERVER_DATABASE_ENV_H_
 #define SERVER_DATABASE_ENV_H_
 
-#include "DatabaseEnv.h"
+#include "DatabaseWorkerPool.h"
 
-class ServerDatabaseWorkerPoolMySQL : public DatabaseWorkerPoolMySQL
+class ServerDatabaseWorkerPoolMySQL : public MySQL::DatabaseWorkerPool
 {
 };
 

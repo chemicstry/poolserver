@@ -77,4 +77,10 @@ inline void JSON::Set<JSON>(std::string key, JSON value)
     pt->put_child(key, *value.pt);
 }
 
+template<>
+inline void JSON::Add<JSON>(JSON value)
+{
+    pt->push_back(std::make_pair("", *value.pt));
+}
+
 #endif

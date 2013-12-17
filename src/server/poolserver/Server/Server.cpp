@@ -17,14 +17,33 @@ Server::~Server()
     //delete stratumServer;
 }
 
+void AsyncQueryCallback(MySQL::QueryResult result)
+{
+    sLog.Info(LOG_SERVER, "Metadata: F: %u R: %u", result->GetFieldCount(), result->GetRowCount());
+    while (result->NextRow()) {
+        MySQL::Field* fields = result->Fetch();
+        sLog.Info(LOG_SERVER, "Row: %i %s", fields[0].GetUInt32(), 
+        fields[1].GetString().c_str());
+    }
+}
+
 int Server::Run()
 {
     sLog.Info(LOG_SERVER, "Server is starting...");
     
     InitDatabase();
     
-    sDatabase.Execute("INSERT INTO `test_table` VALUES ('999', 'sync', '1.1')");
-    sDatabase.ExecuteAsync("INSERT INTO `test_table` VALUES ('999', 'sync', '1.1')");
+    //sDatabase.Execute("INSERT INTO `test_table` VALUES ('999', 'sync', '1.1')");
+    //sDatabase.ExecuteAsync("INSERT INTO `test_table` VALUES ('999', 'sync', '1.1')");
+    
+    sDatabase.QueryAsync("SELECT * FROM `test_table`", &AsyncQueryCallback);
+    MySQL::QueryResult result = sDatabase.Query("SELECT * FROM `test_table`");
+    sLog.Info(LOG_SERVER, "Metadata: F: %u R: %u", result->GetFieldCount(), result->GetRowCount());
+    while (result->NextRow()) {
+        MySQL::Field* fields = result->Fetch();
+        sLog.Info(LOG_SERVER, "Row: %i %s", fields[0].GetUInt32(), 
+        fields[1].GetString().c_str());
+    }
     
     // Start stratum server
     sLog.Info(LOG_SERVER, "Starting stratum");
@@ -80,7 +99,7 @@ void Server::Update(uint32_t diff)
 bool Server::InitDatabase()
 {
     if (boost::iequals(sConfig.Get<std::string>("DatabaseDriver"), "mysql")) {
-        MySQLConnectionInfo connInfo;
+        MySQL::ConnectionInfo connInfo;
         connInfo.Host = sConfig.Get<std::string>("MySQLHost");
         connInfo.Port = sConfig.Get<uint16_t>("MySQLPort");
         connInfo.User = sConfig.Get<std::string>("MySQLUser");

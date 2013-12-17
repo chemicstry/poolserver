@@ -5,6 +5,9 @@
 
 #include <boost/function.hpp>
 
-typedef boost::function<void(ResultSet*)> DatabaseCallback;
+namespace MySQL
+{
+    typedef boost::function<void(QueryResult)> DatabaseCallback;
+}
 
 #endif
