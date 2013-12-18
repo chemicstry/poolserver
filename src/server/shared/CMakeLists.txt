@@ -2,7 +2,6 @@
 file(GLOB_RECURSE sources_Configuration Configuration/*.cpp Configuration/*.h)
 file(GLOB_RECURSE sources_MySQL MySQL/*.cpp MySQL/*.h)
 file(GLOB_RECURSE sources_Logging Logging/*.cpp Logging/*.h)
-file(GLOB_RECURSE sources_Stratum Stratum/*.cpp Stratum/*.h)
 file(GLOB_RECURSE sources_JSON JSON/*.cpp JSON/*.h)
 file(GLOB_RECURSE sources_JSONRPC JSONRPC/*.cpp JSONRPC/*.h)
 
@@ -12,7 +11,6 @@ set(sources_Shared
   ${sources_Configuration}
   ${sources_MySQL}
   ${sources_Logging}
-  ${sources_Stratum}
   ${sources_JSON}
   ${sources_JSONRPC}
   ${sources_localdir}

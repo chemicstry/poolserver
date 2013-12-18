@@ -1,5 +1,6 @@
 #include "Server.h"
 #include "Config.h"
+#include "JSONRPC.h"
 #include "Log.h"
 #include "Stratum/Server.h"
 #include "ServerDatabaseEnv.h"
@@ -29,7 +30,30 @@ int Server::Run()
 {
     sLog.Info(LOG_SERVER, "Server is starting...");
     
-    InitDatabase();
+    //InitDatabase();
+    
+    // Main io service
+    asio::io_service io_service;
+    
+    Stratum::Server srv(io_service);
+    
+    // Init Bitcoin RPC
+    JSONRPCConnectionInfo coninfo;
+    coninfo.Host = "84.240.15.208";
+    coninfo.Port = "9902";
+    coninfo.User = "ppcuser";
+    coninfo.Pass = "DYAL6bC4RUHksL6ikdx7";
+    
+    JSONRPC* bitcoinrpc = new JSONRPC();
+    bitcoinrpc->Connect(coninfo);
+    srv.SetBitcoinRPC(bitcoinrpc);
+    
+    // Start stratum server
+    tcp::endpoint endpoint(tcp::v4(), sConfig.Get<uint16>("StratumPort"));
+    srv.Start(endpoint);
+    
+    io_service.run();
+    
     
     //sDatabase.Execute("INSERT INTO `test_table` VALUES ('999', 'sync', '1.1')");
     //sDatabase.ExecuteAsync("INSERT INTO `test_table` VALUES ('999', 'sync', '1.1')");
@@ -40,19 +64,19 @@ int Server::Run()
     stmt->SetFloat(2, 5.987);
     sDatabase.ExecuteAsync(stmt);*/
     
-    MySQL::PreparedStatement* stmt = sDatabase.GetPreparedStatement(STMT_QUERY_TEST_TABLE);
-    MySQL::QueryResult result = sDatabase.Query(stmt);
+    //MySQL::PreparedStatement* stmt = sDatabase.GetPreparedStatement(STMT_QUERY_TEST_TABLE);
+    //MySQL::QueryResult result = sDatabase.Query(stmt);
     
     
     //sDatabase.QueryAsync("SELECT * FROM `test_table`", &AsyncQueryCallback);
     //MySQL::QueryResult result = sDatabase.Query("SELECT * FROM `test_table`");
-    if (result) {
+    /*if (result) {
         sLog.Info(LOG_SERVER, "Metadata: F: %u R: %u", result->GetFieldCount(), result->GetRowCount());
         while (MySQL::Field* fields = result->FetchRow()) {
             sLog.Info(LOG_SERVER, "Row: %i %s", fields[0].GetUInt32(), fields[1].GetString().c_str());
         }
     } else
-        sLog.Info(LOG_SERVER, "Empty result");
+        sLog.Info(LOG_SERVER, "Empty result");*/
     
     // Start stratum server
     sLog.Info(LOG_SERVER, "Starting stratum");

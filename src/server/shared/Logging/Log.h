@@ -18,7 +18,8 @@ enum LogType
     LOG_SERVER                          = 1,
     LOG_DATABASE                        = 2,
     LOG_JSON                            = 3,
-    LOG_JSONRPC                         = 4
+    LOG_JSONRPC                         = 4,
+    LOG_STRATUM                         = 5,
 };
 
 enum LogLevel

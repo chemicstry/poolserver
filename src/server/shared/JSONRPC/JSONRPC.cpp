@@ -5,6 +5,8 @@
 #include "Util.h"
 #include "Log.h"
 
+using namespace boost::asio::ip;
+
 bool JSONRPC::Connect(JSONRPCConnectionInfo connInfo)
 {
     _connInfo = connInfo;
@@ -14,17 +16,18 @@ bool JSONRPC::Connect(JSONRPCConnectionInfo connInfo)
     
     sLog.Debug(LOG_JSONRPC, "JSONRPC::Connect(): B64Auth: %s", _connInfo.B64Auth.c_str());
 
-    boost::asio::ip::tcp::resolver resolver(_ios);
-    boost::asio::ip::tcp::resolver::query q(_connInfo.Host, _connInfo.Port);
-    boost::asio::ip::tcp::resolver::iterator epi = resolver.resolve(q);
-    boost::asio::ip::tcp::resolver::iterator end;
-
+    tcp::resolver resolver(_ios);
+    tcp::resolver::query q(tcp::v4(), connInfo.Host, connInfo.Port);
+    tcp::resolver::iterator epi = resolver.resolve(q);
+    tcp::resolver::iterator end;
+    
     boost::system::error_code error = boost::asio::error::host_not_found;
     
     while (error && epi != end)
     {
+        _ep = *epi++;
         _sock.close();
-        _sock.connect(*epi, error);
+        _sock.connect(_ep, error);
     }
     
     if (error)
@@ -32,8 +35,6 @@ bool JSONRPC::Connect(JSONRPCConnectionInfo connInfo)
         sLog.Error(LOG_JSONRPC, "JSONRPC::Connect(): Error connecting to '%s': %s", _connInfo.Host.c_str(), boost::system::system_error(error).what());
         return false;
     }
-    
-    _ep = *epi;
     
     _sock.close();
 
@@ -123,5 +124,7 @@ JSON JSONRPC::Query(std::string method, JSON params)
     
     sLog.Debug(LOG_JSONRPC, "JSONRPC::Query(): JSON Response: %s", jsonresponse.c_str());
     
-    return JSON::FromString(jsonresponse);
+    JSON data = JSON::FromString(jsonresponse);
+    
+    return data["result"];
 }

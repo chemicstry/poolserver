@@ -281,8 +281,8 @@ namespace MySQL
         if (index >= _stmts.size())
             _stmts.resize(index+1);
         
-        ConnectionPreparedStatement* mStmt = new ConnectionPreparedStatement(stmt);
-        _stmts[index] = mStmt;
+        ConnectionPreparedStatement* cstmt = new ConnectionPreparedStatement(stmt);
+        _stmts[index] = cstmt;
         
         sLog.Debug(LOG_DATABASE, "Prepared STMT id: %u, sql: \"%s\"", index, sql);
         

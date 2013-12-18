@@ -2,23 +2,26 @@
 # Add sources
 file(GLOB_RECURSE sources_Server Server/*.cpp Server/*.h)
 file(GLOB_RECURSE sources_Database Database/*.cpp Database/*.h)
+file(GLOB_RECURSE sources_Stratum Stratum/*.cpp Stratum/*.h)
 file(GLOB sources_localdir *.cpp *.h)
 
 set(sources_Poolserver
   ${sources_Server}
   ${sources_Database}
+  ${sources_Stratum}
   ${sources_localdir}
 )
 
 include_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/Server
+  ${CMAKE_CURRENT_SOURCE_DIR}/Database
   ${CMAKE_SOURCE_DIR}/src/server/shared
   ${CMAKE_SOURCE_DIR}/src/server/shared/Configuration
   ${CMAKE_SOURCE_DIR}/src/server/shared/MySQL
   ${CMAKE_SOURCE_DIR}/src/server/shared/Logging
   ${CMAKE_SOURCE_DIR}/src/server/shared/JSON
   ${CMAKE_SOURCE_DIR}/src/server/shared/JSONRPC
-  ${CMAKE_SOURCE_DIR}/src/server/poolserver/Server
-  ${CMAKE_SOURCE_DIR}/src/server/poolserver/Database
   ${Boost_INCLUDE_DIR}
   ${MYSQL_INCLUDE_DIR}
 )
