@@ -7,6 +7,8 @@
 #include "Log.h"
 #include "JSON.h"
 #include "JSONRPC.h"
+#include "Bitcoin.h"
+#include "Util.h"
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
@@ -85,6 +87,16 @@ namespace Stratum
             _StartAccept();
         }
         
+        void _UpdateWork(bool reset)
+        {
+            JSON response = _bitcoinrpc->Query("getblocktemplate");
+            
+            Bitcoin::Block* block = new Bitcoin::Block();
+            block->version = response.Get<uint32>("version");
+            block->prevBlockHash = Util::ASCIIToBin(response.Get<std::string>("previousblockhash"));
+            
+        }
+        
         void _CheckBlocks()
         {
             sLog.Debug(LOG_STRATUM, "Checking for new blocks...");
@@ -92,13 +104,10 @@ namespace Stratum
             JSON response = _bitcoinrpc->Query("getinfo");
             uint32 curBlock = response.Get<uint32>("blocks");
             
-            // Initializing server
-            if (_blockHeight == 0) {
-                _blockHeight = curBlock;
-            } else if (curBlock > _blockHeight) {
+            if (curBlock > _blockHeight) {
                 sLog.Debug(LOG_STRATUM, "New block on network! Height: %u", curBlock);
                 _blockHeight = curBlock;
-                // do some crazy stuff
+                _UpdateWork(true);
             }
             
             _blockCheckTimer.expires_from_now(boost::posix_time::milliseconds(sConfig.Get<uint32>("StratumBlockCheckTime")));
@@ -116,6 +125,9 @@ namespace Stratum
         // Bitcoin info
         asio::deadline_timer _blockCheckTimer;
         uint32 _blockHeight;
+        
+        // Work
+        Bitcoin::Block* _currentWork;
     };
 }
 

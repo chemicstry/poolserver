@@ -4,10 +4,12 @@
 #include "Log.h"
 #include "Stratum/Server.h"
 #include "ServerDatabaseEnv.h"
+#include "Crypto.h"
 
 #include <boost/thread.hpp>
 #include <boost/algorithm/string.hpp>
 #include <iostream>
+#include <algorithm>
 
 Server::Server() : serverLoops(0)
 {
@@ -31,6 +33,13 @@ int Server::Run()
     sLog.Info(LOG_SERVER, "Server is starting...");
     
     //InitDatabase();
+    
+    //sLog.Info(LOG_SERVER, "Hash: %s", Util::BinToASCII(Crypto::SHA256("labas")).c_str());
+    std::vector<byte> trans = Util::ASCIIToBin("010000002e0fb65201eb031afcccb670d0abbb94e0d2a97c2c81c8dd3eac02a92780578e06d1c5d067000000006c493046022100fdac85d847568c37edb07101ba0e7a32b47491c7cd81798190cbc190cbc439e5022100ab6145c93a822d861ae76482506425f05016bac7b901c08aa58dff8cd7d8e0cb012102421c601634e066fcc4d8aa768dfad475ae9eccc5daf3169522572468550483dbffffffff02a08fb502000000001976a9142ef2b6de3e3a269c5883a0717948e257814b6ba688ac8cf51300000000001976a9144221049afbb6ddb1886a12d7d0300365e8769f2088ac00000000");
+    //std::vector<byte> trans = Util::ASCIIToBin("abcd");
+    //std::reverse(trans.begin(), trans.end());
+    sLog.Info(LOG_SERVER, "Trans: %s", Util::BinToASCII(trans).c_str());
+    sLog.Info(LOG_SERVER, "Hash: %s", Util::BinToASCII(Util::Reverse(Crypto::SHA256D(trans))).c_str());
     
     // Main io service
     asio::io_service io_service;

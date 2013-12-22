@@ -1,7 +1,7 @@
 #ifndef UTIL_H_
 #define UTIL_H_
 
-#include <Common.h>
+#include "Common.h"
 
 #include <sstream>
 #include <iostream>
@@ -103,6 +103,11 @@ namespace Util
     
     std::string ToBase64(std::string input, bool linebreaks = true);
     std::string FromBase64(std::string input);
+    
+    uint8 ASCIIToHex(char ch);
+    std::vector<byte> ASCIIToBin(std::string str);
+    std::string BinToASCII(std::vector<byte> data);
+    std::vector<byte> Reverse(std::vector<byte> data);
 }
 
 #endif

@@ -22,8 +22,10 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/src/server/shared/Logging
   ${CMAKE_SOURCE_DIR}/src/server/shared/JSON
   ${CMAKE_SOURCE_DIR}/src/server/shared/JSONRPC
+  ${CMAKE_SOURCE_DIR}/src/server/shared/Bitcoin
   ${Boost_INCLUDE_DIR}
   ${MYSQL_INCLUDE_DIR}
+  ${GMP_INCLUDE_DIR}
 )
 
 # Create executable
@@ -36,6 +38,9 @@ target_link_libraries(poolserver
   shared
   ${Boost_LIBRARIES}
   ${MYSQL_LIBRARY}
+  ${GMP_LIBRARIES}
+  ${GMPXX_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
 )
 
 # Install

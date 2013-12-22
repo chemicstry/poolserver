@@ -38,6 +38,12 @@ if( MYSQL )
   find_package(MySQL REQUIRED)
 endif()
 
+# GMP
+find_package(GMP REQUIRED)
+
+# OpenSSL
+find_package(OpenSSL REQUIRED)
+
 # Print options
 include(cmake/showoptions.cmake)
 

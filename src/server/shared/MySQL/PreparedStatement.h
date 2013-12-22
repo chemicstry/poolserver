@@ -1,7 +1,7 @@
 #ifndef PREPARED_STATEMENT_MYSQL_H_
 #define PREPARED_STATEMENT_MYSQL_H_
 
-#include <Common.h>
+#include "Common.h"
 
 #include <boost/variant.hpp>
 #include <mysql.h>

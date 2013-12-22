@@ -42,3 +42,46 @@ std::string Util::FromBase64(std::string input)
     result.erase(result.end() - paddChars, result.end());  // erase padding '\0' characters
     return result;
 }
+
+uint8 Util::ASCIIToHex(char ch)
+{
+    if (ch > 47 && ch < 58)
+        return ch - 48;
+    else if (ch > 64 && ch < 71)
+        return ch - 55;
+    else if (ch > 96 && ch < 103)
+        return ch - 87;
+    else 
+        return 0; // Invalid
+}
+
+std::vector<byte> Util::ASCIIToBin(std::string str)
+{
+    std::vector<byte> data;
+    data.resize(str.size()/2, 0);
+    for (uint64 i = 0; i < str.size(); ++i) {
+        if (i%2)
+            data[i/2] += ASCIIToHex(str[i]);
+        else
+            data[i/2] += ASCIIToHex(str[i])*16;
+    }
+    return data;
+}
+
+std::string Util::BinToASCII(std::vector<byte> data)
+{
+    std::string str;
+    for (uint64 i = 0; i < data.size(); ++i)
+    {
+        str += "0123456789abcdef"[data[i]/16];
+        str += "0123456789abcdef"[data[i]%16];
+    }
+    return str;
+}
+
+std::vector<byte> Util::Reverse(std::vector<byte> data)
+{
+    std::vector<byte> out = data;
+    std::reverse(out.begin(), out.end());
+    return out;
+}

@@ -1,40 +1,33 @@
-#ifndef BITCOIN_H_
-#define BITCOIN_H_
+#ifndef BITCOIN_BLOCK_H_
+#define BITCOIN_BLOCK_H_
+
+#include "Common.h"
+#include "Transaction.h"
+
+#include <vector>
 
 namespace Bitcoin
 {
-    class TxIn
-    {
-    };
-    
-    class TxOut
-    {
-    };
-    
-    class Transaction
-    {
-        uint32 Version;
-        std::vector<TxIn> in;
-        std::vector<TxOut> out;
-        uint32 LockTime;
-    };
-    
     class BlockHeader
     {
-        uint32 Version;
-        std::array<char, 32> PrevBlockHash;
-        std::array<char, 32> MerkleRootHash;
-        uint32 Time;
-        uint32 Bits;
-        uint32 Nonce;
+    public:
+        uint32 version;
+        std::vector<byte> prevBlockHash;
+        std::vector<byte> merkleRootHash;
+        uint32 time;
+        uint32 bits;
+        uint32 nonce;
     };
     
     class Block : public BlockHeader
     {
+    public:
         std::vector<Transaction> tx;
+        
+        std::vector<byte> GenerateMerkle()
+        {
+        }
     };
-    
-    class BlockTemplate
 }
 
 #endif
