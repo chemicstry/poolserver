@@ -35,17 +35,17 @@ int Server::Run()
     
     //InitDatabase();
     
-    Bitcoin::OutPoint outpoint;
-    outpoint.hash = Util::ASCIIToBin("6DBDDB085B1D8AF75184F0BC01FAD58D1266E9B63B50881990E4B40D6AEE3629");
-    outpoint.n = 0;
+    ByteBuffer buf(Util::ASCIIToBin("01000000010c432f4fb3e871a8bda638350b3d5c698cf431db8d6031b53e3fb5159e59d4a90000000000ffffffff0100f2052a010000001976a9143744841e13b90b4aca16fe793a7f88da3a23cc7188ac00000000"));
     
-    Bitcoin::TxOut txout;
-    txout.value = 5000000;
-    txout.scriptPubKey = Bitcoin::Script(Util::ASCIIToBin("76A9141AA0CD1CBEA6E7458A7ABAD512A9D9EA1AFB225E88AC"));
+    Bitcoin::Transaction trans;
+    buf >> trans;
     
-    ByteBuffer buf;
-    buf << txout;
-    sLog.Info(LOG_SERVER, "Serialized: %s", Util::BinToASCII(buf.vec).c_str());
+    ByteBuffer buf2;
+    buf2 << trans;
+    
+    sLog.Info(LOG_SERVER, "Trans: %s", Util::BinToASCII(buf2.vec).c_str());
+    
+    
     
     // Main io service
     asio::io_service io_service;

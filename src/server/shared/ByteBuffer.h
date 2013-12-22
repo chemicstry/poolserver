@@ -7,6 +7,9 @@
 class ByteBuffer
 {
 public:
+    ByteBuffer(): pointer(0) {}
+    ByteBuffer(std::vector<byte> data): pointer(0), vec(data) {}
+    
     ByteBuffer& operator<<(ByteBuffer& b)
     {
         Append(b.vec);
@@ -69,6 +72,33 @@ public:
         vec.insert(vec.end(), data.begin(), data.end());
     }
     
+    std::vector<byte> ReadBytes(size_t size)
+    {
+        if (vec.size() < pointer+size)
+            return std::vector<byte>();
+        
+        pointer += size;
+        return std::vector<byte>(vec.begin()+pointer-size, vec.begin()+pointer);
+    }
+    
+    template<typename T>
+    T Read()
+    {
+        size_t size = sizeof(T);
+        
+        if (vec.size() < pointer+size)
+            return NULL;
+        
+        T data = 0;
+        for (uint32 i = 0; i < size; ++i)
+            data += vec[pointer+i]<<(i*8);
+        
+        pointer += size;
+        
+        return data;
+    }
+    
+    uint64 pointer;
     std::vector<byte> vec;
 };
 

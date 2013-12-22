@@ -9,13 +9,17 @@ namespace Bitcoin
     class VarInt
     {
     public:
-        VarInt(uint64 data) : value(data) {}
+        VarInt(): value(0) {}
+        VarInt(uint64 data): value(data) {}
         uint64 value;
+        
+        operator uint64() const { return value; }
         
         friend ByteBuffer& operator<<(ByteBuffer& a, VarInt& b);
     };
     
     ByteBuffer& operator<<(ByteBuffer& a, VarInt& b);
+    ByteBuffer& operator>>(ByteBuffer& a, VarInt& b);
 }
 
 #endif

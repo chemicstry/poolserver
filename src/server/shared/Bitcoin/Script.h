@@ -64,6 +64,7 @@ namespace Bitcoin
     };
     
     ByteBuffer& operator<<(ByteBuffer& a, Script& b);
+    ByteBuffer& operator>>(ByteBuffer& a, Script& b);
 }
 
 #endif

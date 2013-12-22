@@ -15,7 +15,9 @@ namespace Bitcoin
         uint32 n;
     };
     
+    // OutPoint Serialization (Implementation in Serialization.cpp)
     ByteBuffer& operator<<(ByteBuffer& a, OutPoint& b);
+    ByteBuffer& operator>>(ByteBuffer& a, OutPoint& b);
     
     class TxIn
     {
@@ -25,7 +27,9 @@ namespace Bitcoin
         uint32 n;
     };
     
+    // TxIn Serialization (Implementation in Serialization.cpp)
     ByteBuffer& operator<<(ByteBuffer& a, TxIn& b);
+    ByteBuffer& operator>>(ByteBuffer& a, TxIn& b);
     
     class TxOut
     {
@@ -34,7 +38,9 @@ namespace Bitcoin
         Script scriptPubKey;
     };
     
+    // TxOut Serialization (Implementation in Serialization.cpp)
     ByteBuffer& operator<<(ByteBuffer& a, TxOut& b);
+    ByteBuffer& operator>>(ByteBuffer& a, TxOut& b);
     
     class Transaction
     {
@@ -45,7 +51,9 @@ namespace Bitcoin
         uint32 lockTime;
     };
     
+    // Transaction Serialization (Implementation in Serialization.cpp)
     ByteBuffer& operator<<(ByteBuffer& a, Transaction& b);
+    ByteBuffer& operator>>(ByteBuffer& a, Transaction& b);
 }
 
 #endif
