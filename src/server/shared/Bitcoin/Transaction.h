@@ -5,6 +5,7 @@
 #include "ByteBuffer.h"
 #include "VarInt.h"
 #include "Script.h"
+#include "Crypto.h"
 
 namespace Bitcoin
 {
@@ -49,6 +50,8 @@ namespace Bitcoin
         std::vector<TxIn> in;
         std::vector<TxOut> out;
         uint32 lockTime;
+        
+        std::vector<byte> GetHash();
     };
     
     // Transaction Serialization (Implementation in Serialization.cpp)

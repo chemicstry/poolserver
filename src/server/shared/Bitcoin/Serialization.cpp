@@ -1,6 +1,7 @@
 #include "VarInt.h"
 #include "Script.h"
 #include "Transaction.h"
+#include "Block.h"
 
 using namespace Bitcoin;
 
@@ -8,16 +9,16 @@ using namespace Bitcoin;
 ByteBuffer& Bitcoin::operator<<(ByteBuffer& a, VarInt& b)
 {
     if (b.value < 0xfd) {
-        a.Append(b.value, 1);
+        a.Append<uint8>(b.value);
     } else if (b.value <= 0xffff) {
-        a.Append(0xfd, 1);
-        a.Append(b.value, 2);
+        a.Append<uint8>(0xfd);
+        a.Append<uint16>(b.value);
     } else if (b.value <= 0xffffffff) {
-        a.Append(0xfe, 1);
-        a.Append(b.value, 4);
+        a.Append<uint8>(0xfe);
+        a.Append<uint32>(b.value);
     } else {
-        a.Append(0xff, 1);
-        a.Append(b.value, 8);
+        a.Append<uint8>(0xff);
+        a.Append<uint64>(b.value);
     }
     return a;
 }
@@ -61,7 +62,7 @@ ByteBuffer& Bitcoin::operator<<(ByteBuffer& a, OutPoint& b)
 ByteBuffer& Bitcoin::operator>>(ByteBuffer& a, OutPoint& b)
 {
     b.hash = a.ReadBytes(32);
-    b.n = a.Read<uint32>();
+    a >> b.n;
     return a;
 }
 
@@ -77,7 +78,7 @@ ByteBuffer& Bitcoin::operator>>(ByteBuffer& a, TxIn& b)
 {
     a >> b.prevout;
     a >> b.script;
-    b.n = a.Read<uint32>();
+    a >> b.n;
     return a;
 }
 
@@ -90,7 +91,7 @@ ByteBuffer& Bitcoin::operator<<(ByteBuffer& a, TxOut& b)
 }
 ByteBuffer& Bitcoin::operator>>(ByteBuffer& a, TxOut& b)
 {
-    b.value = a.Read<uint64>();
+    a >> b.value;
     a >> b.scriptPubKey;
     return a;
 }
@@ -103,28 +104,29 @@ ByteBuffer& Bitcoin::operator<<(ByteBuffer& a, Transaction& b)
     // Inputs
     VarInt insize(b.in.size());
     a << insize;
-    for (uint32 i = 0; i < b.in.size(); ++i)
+    for (uint64 i = 0; i < insize; ++i)
         a << b.in[i];
     
     // Outputs
     VarInt outsize(b.out.size());
     a << outsize;
-    for (uint32 i = 0; i < b.out.size(); ++i)
+    for (uint64 i = 0; i < outsize; ++i)
         a << b.out[i];
     
     a << b.lockTime;
+    
     return a;
 }
 ByteBuffer& Bitcoin::operator>>(ByteBuffer& a, Transaction& b)
 {
-    b.version = a.Read<uint32>();
+    a >> b.version;
     
     // Inputs
     VarInt insize;
     a >> insize;
     
     b.in.resize(insize);
-    for (uint32 i = 0; i < insize; ++i)
+    for (uint64 i = 0; i < insize; ++i)
         a >> b.in[i];
     
     // Outputs
@@ -132,9 +134,47 @@ ByteBuffer& Bitcoin::operator>>(ByteBuffer& a, Transaction& b)
     a >> outsize;
     
     b.out.resize(outsize);
-    for (uint32 i = 0; i < outsize; ++i)
+    for (uint64 i = 0; i < outsize; ++i)
         a >> b.out[i];
     
-    b.lockTime = a.Read<uint32>();
+    a >> b.lockTime;
+    
+    return a;
+}
+
+// Block
+ByteBuffer& Bitcoin::operator<<(ByteBuffer& a, Block& b)
+{
+    a << b.version;
+    a << b.prevBlockHash;
+    a << b.merkleRootHash;
+    a << b.time;
+    a << b.bits;
+    a << b.nonce;
+    
+    // Serialize transactions
+    VarInt txcount(b.tx.size());
+    a << txcount;
+    for (uint64 i = 0; i < txcount; ++i)
+        a << b.tx[i];
+    
+    return a;
+}
+ByteBuffer& Bitcoin::operator>>(ByteBuffer& a, Block& b)
+{
+    a >> b.version;
+    b.prevBlockHash = a.ReadBytes(32);
+    b.merkleRootHash = a.ReadBytes(32);
+    a >> b.time;
+    a >> b.bits;
+    a >> b.nonce;
+    
+    VarInt txcount;
+    a >> txcount;
+    
+    b.tx.resize(txcount);
+    for (uint64 i = 0; i < txcount; ++i)
+        a >> b.tx[i];
+    
     return a;
 }

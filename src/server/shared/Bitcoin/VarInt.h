@@ -18,6 +18,7 @@ namespace Bitcoin
         friend ByteBuffer& operator<<(ByteBuffer& a, VarInt& b);
     };
     
+    // VarInt Serialization (Implementation in Serialization.cpp)
     ByteBuffer& operator<<(ByteBuffer& a, VarInt& b);
     ByteBuffer& operator>>(ByteBuffer& a, VarInt& b);
 }

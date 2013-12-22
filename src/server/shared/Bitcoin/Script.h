@@ -63,6 +63,7 @@ namespace Bitcoin
         }
     };
     
+    // Script Serialization (Implementation in Serialization.cpp)
     ByteBuffer& operator<<(ByteBuffer& a, Script& b);
     ByteBuffer& operator>>(ByteBuffer& a, Script& b);
 }

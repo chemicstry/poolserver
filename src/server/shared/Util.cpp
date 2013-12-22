@@ -85,3 +85,10 @@ std::vector<byte> Util::Reverse(std::vector<byte> data)
     std::reverse(out.begin(), out.end());
     return out;
 }
+
+std::vector<byte> Util::Join(std::vector<byte> v1, std::vector<byte> v2)
+{
+    std::vector<byte> v3 = v1;
+    v3.insert(v3.end(), v2.begin(), v2.end());
+    return v3;
+}

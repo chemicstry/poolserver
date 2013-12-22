@@ -108,6 +108,7 @@ namespace Util
     std::vector<byte> ASCIIToBin(std::string str);
     std::string BinToASCII(std::vector<byte> data);
     std::vector<byte> Reverse(std::vector<byte> data);
+    std::vector<byte> Join(std::vector<byte> v1, std::vector<byte> v2);
 }
 
 #endif

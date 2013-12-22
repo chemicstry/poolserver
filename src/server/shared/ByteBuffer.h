@@ -20,50 +20,25 @@ public:
         Append(b);
         return *this;
     }
-    ByteBuffer& operator<<(uint8& b)
+    
+    template<typename T>
+    ByteBuffer& operator<<(T& b)
     {
-        Append(b, 1);
-        return *this;
-    }
-    ByteBuffer& operator<<(uint16& b)
-    {
-        Append(b, 2);
-        return *this;
-    }
-    ByteBuffer& operator<<(uint32& b)
-    {
-        Append(b, 4);
-        return *this;
-    }
-    ByteBuffer& operator<<(uint64& b)
-    {
-        Append(b, 8);
-        return *this;
-    }
-    ByteBuffer& operator<<(int8& b)
-    {
-        Append(b, 1);
-        return *this;
-    }
-    ByteBuffer& operator<<(int16& b)
-    {
-        Append(b, 2);
-        return *this;
-    }
-    ByteBuffer& operator<<(int32& b)
-    {
-        Append(b, 4);
-        return *this;
-    }
-    ByteBuffer& operator<<(int64& b)
-    {
-        Append(b, 8);
+        Append<T>(b);
         return *this;
     }
     
-    void Append(uint64 data, size_t size)
+    template<typename T>
+    ByteBuffer& operator>>(T& b)
     {
-        for (int i = 0; i < size; i++)
+        b = Read<T>();
+        return *this;
+    }
+    
+    template<typename T>
+    void Append(T data)
+    {
+        for (uint8 i = 0; i < sizeof(T); ++i)
             vec.push_back(data >> (i * 8));
     }
     
@@ -90,12 +65,17 @@ public:
             return NULL;
         
         T data = 0;
-        for (uint32 i = 0; i < size; ++i)
-            data += vec[pointer+i]<<(i*8);
+        for (uint64 i = 0; i < size; ++i)
+            data += (T)vec[pointer+i]<<(i*8);
         
         pointer += size;
         
         return data;
+    }
+    
+    std::vector<byte> Bytes()
+    {
+        return vec;
     }
     
     uint64 pointer;

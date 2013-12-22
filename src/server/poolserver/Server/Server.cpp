@@ -34,8 +34,31 @@ int Server::Run()
     sLog.Info(LOG_SERVER, "Server is starting...");
     
     //InitDatabase();
+    std::vector<byte> test = Util::ASCIIToBin("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b");
+    sLog.Info(LOG_SERVER, "Hash: %s", Util::BinToASCII(Crypto::SHA256D(test)).c_str());
+    sLog.Info(LOG_SERVER, "RevHash: %s", Util::BinToASCII(Crypto::SHA256D(Util::Reverse(test))).c_str());
     
-    ByteBuffer buf(Util::ASCIIToBin("01000000010c432f4fb3e871a8bda638350b3d5c698cf431db8d6031b53e3fb5159e59d4a90000000000ffffffff0100f2052a010000001976a9143744841e13b90b4aca16fe793a7f88da3a23cc7188ac00000000"));
+    Bitcoin::Block block;
+    
+    ByteBuffer buf(Util::ASCIIToBin("01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73ffffffff0100f2052a01000000434104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac00000000"));
+    Bitcoin::Transaction trans;
+    buf >> trans;
+    sLog.Info(LOG_SERVER, "Version: %u", trans.version);
+    sLog.Info(LOG_SERVER, "Inputs: %u", trans.in.size());
+    sLog.Info(LOG_SERVER, "PrevOut: %s", Util::BinToASCII(trans.in[0].prevout.hash).c_str());
+    sLog.Info(LOG_SERVER, "PrevOutn: %u", trans.in[0].prevout.n);
+    sLog.Info(LOG_SERVER, "ScriptSig: %s", Util::BinToASCII(trans.in[0].script.script).c_str());
+    sLog.Info(LOG_SERVER, "Inn: %u", trans.in[0].n);
+    sLog.Info(LOG_SERVER, "Outputs: %u", trans.out.size());
+    sLog.Info(LOG_SERVER, "Value: %i", trans.out[0].value);
+    sLog.Info(LOG_SERVER, "PubSig: %s", Util::BinToASCII(trans.out[0].scriptPubKey.script).c_str());
+    sLog.Info(LOG_SERVER, "LockTime: %u", trans.lockTime);
+    block.tx.resize(1);
+    block.tx[0] = trans;
+    block.BuildMerkleTree();
+    sLog.Info(LOG_SERVER, "Hash: %s", Util::BinToASCII(block.merkleRootHash).c_str());
+    
+    /*ByteBuffer buf(Util::ASCIIToBin("01000000010c432f4fb3e871a8bda638350b3d5c698cf431db8d6031b53e3fb5159e59d4a90000000000ffffffff0100f2052a010000001976a9143744841e13b90b4aca16fe793a7f88da3a23cc7188ac00000000"));
     
     Bitcoin::Transaction trans;
     buf >> trans;
@@ -43,7 +66,7 @@ int Server::Run()
     ByteBuffer buf2;
     buf2 << trans;
     
-    sLog.Info(LOG_SERVER, "Trans: %s", Util::BinToASCII(buf2.vec).c_str());
+    sLog.Info(LOG_SERVER, "Trans: %s", Util::BinToASCII(buf2.vec).c_str());*/
     
     
     
