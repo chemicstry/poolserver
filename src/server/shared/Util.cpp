@@ -45,11 +45,11 @@ std::string Util::FromBase64(std::string input)
 
 uint8 Util::ASCIIToHex(char ch)
 {
-    if (ch > 47 && ch < 58)
+    if (ch > 47 && ch < 58) // Number
         return ch - 48;
-    else if (ch > 64 && ch < 71)
+    else if (ch > 64 && ch < 71) // Uppercase
         return ch - 55;
-    else if (ch > 96 && ch < 103)
+    else if (ch > 96 && ch < 103) // Lowercase
         return ch - 87;
     else 
         return 0; // Invalid

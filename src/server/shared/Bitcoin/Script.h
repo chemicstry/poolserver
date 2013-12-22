@@ -2,6 +2,8 @@
 #define BITCOIN_SCRIPT_H_
 
 #include "Common.h"
+#include "ByteBuffer.h"
+#include "VarInt.h"
 #include <boost/range/join.hpp>
 #include <vector>
 
@@ -60,6 +62,8 @@ namespace Bitcoin
             return tmp;
         }
     };
+    
+    ByteBuffer& operator<<(ByteBuffer& a, Script& b);
 }
 
 #endif
