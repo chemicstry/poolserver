@@ -7,16 +7,14 @@
 #include <vector>
 #include <algorithm>
 
-#include "Log.h"
-
 namespace Bitcoin
 {
     class BlockHeader
     {
     public:
         uint32 version;
-        std::vector<byte> prevBlockHash;
-        std::vector<byte> merkleRootHash;
+        BinaryData prevBlockHash;
+        BinaryData merkleRootHash;
         uint32 time;
         uint32 bits;
         uint32 nonce;
@@ -29,7 +27,7 @@ namespace Bitcoin
         std::vector<Transaction> tx;
         
         // Other data
-        std::vector<std::vector<byte> > merkleTree;
+        std::vector<BinaryData> merkleTree;
         
         void BuildMerkleTree()
         {
@@ -60,6 +58,8 @@ namespace Bitcoin
             merkleRootHash = merkleTree[merkleTree.size()-1];
         }
     };
+    
+    typedef boost::shared_ptr<Block> BlockPtr;
     
     // Block Serialization (Implementation in Serialization.cpp)
     ByteBuffer& operator<<(ByteBuffer& a, Block& b);

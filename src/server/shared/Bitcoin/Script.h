@@ -23,18 +23,18 @@ namespace Bitcoin
     {
     public:
         Script() {}
-        Script(std::vector<byte> data) : script(data) {}
+        Script(BinaryData data) : script(data) {}
         
-        std::vector<byte> script;
+        BinaryData script;
         
         const Script operator+(const Script& other)
         {
-            std::vector<byte> tmp = script;
+            BinaryData tmp = script;
             tmp.insert(tmp.end(), other.script.begin(), other.script.end());
             return Script(tmp);
         }
         
-        const Script operator+(const std::vector<byte> data)
+        const Script operator+(const BinaryData data)
         {
             Script tmp(script);
             

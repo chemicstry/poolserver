@@ -8,14 +8,14 @@ class ByteBuffer
 {
 public:
     ByteBuffer(): pointer(0) {}
-    ByteBuffer(std::vector<byte> data): pointer(0), vec(data) {}
+    ByteBuffer(BinaryData data): pointer(0), vec(data) {}
     
     ByteBuffer& operator<<(ByteBuffer& b)
     {
         Append(b.vec);
         return *this;
     }
-    ByteBuffer& operator<<(std::vector<byte>& b)
+    ByteBuffer& operator<<(BinaryData& b)
     {
         Append(b);
         return *this;
@@ -42,18 +42,18 @@ public:
             vec.push_back(data >> (i * 8));
     }
     
-    void Append(std::vector<byte> data)
+    void Append(BinaryData data)
     {
         vec.insert(vec.end(), data.begin(), data.end());
     }
     
-    std::vector<byte> ReadBytes(size_t size)
+    BinaryData ReadBinary(size_t size)
     {
         if (vec.size() < pointer+size)
-            return std::vector<byte>();
+            return BinaryData();
         
         pointer += size;
-        return std::vector<byte>(vec.begin()+pointer-size, vec.begin()+pointer);
+        return BinaryData(vec.begin()+pointer-size, vec.begin()+pointer);
     }
     
     template<typename T>
@@ -73,13 +73,13 @@ public:
         return data;
     }
     
-    std::vector<byte> Bytes()
+    BinaryData Binary()
     {
         return vec;
     }
     
     uint64 pointer;
-    std::vector<byte> vec;
+    BinaryData vec;
 };
 
 #endif

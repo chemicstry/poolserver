@@ -18,6 +18,19 @@ std::string Util::Date(const char* format, bool utc)
     return ss.str();
 }
 
+uint32 Util::Date(bool utc)
+{
+    boost::posix_time::ptime now;
+    if (utc)
+        now = boost::posix_time::second_clock::universal_time();
+    else
+        now = boost::posix_time::second_clock::local_time();
+    
+    boost::posix_time::ptime epoch(boost::gregorian::date(1970,1,1)); 
+    boost::posix_time::time_duration diff = now - epoch;
+    return diff.total_seconds();
+}
+
 std::string Util::ToBase64(std::string input, bool linebreaks)
 {
     uint32_t writePaddChars = (3 - input.length() % 3) % 3;
@@ -55,9 +68,9 @@ uint8 Util::ASCIIToHex(char ch)
         return 0; // Invalid
 }
 
-std::vector<byte> Util::ASCIIToBin(std::string str)
+BinaryData Util::ASCIIToBin(std::string str)
 {
-    std::vector<byte> data;
+    BinaryData data;
     data.resize(str.size()/2, 0);
     for (uint64 i = 0; i < str.size(); ++i) {
         if (i%2)
@@ -68,7 +81,7 @@ std::vector<byte> Util::ASCIIToBin(std::string str)
     return data;
 }
 
-std::string Util::BinToASCII(std::vector<byte> data)
+std::string Util::BinToASCII(BinaryData data)
 {
     std::string str;
     for (uint64 i = 0; i < data.size(); ++i)
@@ -79,16 +92,16 @@ std::string Util::BinToASCII(std::vector<byte> data)
     return str;
 }
 
-std::vector<byte> Util::Reverse(std::vector<byte> data)
+BinaryData Util::Reverse(BinaryData data)
 {
-    std::vector<byte> out = data;
+    BinaryData out = data;
     std::reverse(out.begin(), out.end());
     return out;
 }
 
-std::vector<byte> Util::Join(std::vector<byte> v1, std::vector<byte> v2)
+BinaryData Util::Join(BinaryData v1, BinaryData v2)
 {
-    std::vector<byte> v3 = v1;
+    BinaryData v3 = v1;
     v3.insert(v3.end(), v2.begin(), v2.end());
     return v3;
 }

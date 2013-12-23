@@ -3,5 +3,7 @@
 
 #include "Block.h"
 #include "Transaction.h"
+#include "VarInt.h"
+#include "Script.h"
 
 #endif

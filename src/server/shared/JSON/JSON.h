@@ -1,6 +1,7 @@
 #ifndef JSON_H_
 #define JSON_H_
 
+#include "Common.h"
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/cstdint.hpp>
@@ -25,9 +26,9 @@ public:
     }
     
     template<class T>
-    T Get(std::string key)
+    T Get()
     {
-        return pt->get<T>(key);
+        return pt->get_value<T>();
     }
     
     JSON operator[] (std::string key)
@@ -37,7 +38,7 @@ public:
         return json;
     }
     
-    JSON operator[] (int index)
+    JSON operator[] (uint32 index)
     {
         JSON json(false);
         boost::property_tree::ptree::iterator it = pt->begin();
@@ -70,6 +71,7 @@ public:
     boost::property_tree::ptree* pt;
     bool _base;
 };
+
 
 template<>
 inline void JSON::Set<JSON>(std::string key, JSON value)

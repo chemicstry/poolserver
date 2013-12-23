@@ -4,6 +4,8 @@
 #include "Common.h"
 #include "Log.h"
 #include "JSON.h"
+#include "Server.h"
+#include "Job.h"
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
@@ -15,10 +17,12 @@ using namespace boost::asio::ip;
 
 namespace Stratum
 {
+    class Server;
+    
     class Client
     {
     public:
-        Client(asio::io_service& io_service) : _socket(io_service)
+        Client(Server* server, asio::io_service& io_service) : _server(server), _socket(io_service), _subscribed(false)
         {
         }
         
@@ -36,17 +40,43 @@ namespace Stratum
                 boost::bind(&Client::_OnReceive, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
         }
         
+        void SendJob()
+        {
+        }
+        
         void SendMessage(JSON msg)
         {
             std::string data = msg.ToString();
+            sLog.Debug(LOG_SERVER, "Sending: %s", data.c_str());
             _socket.send(boost::asio::buffer(data.c_str(), data.length()));
+        }
+        
+        void OnMiningSubscribe(JSON msg);
+        
+        void OnMiningAuthorize(JSON msg)
+        {
+            std::string username = msg["result"][0].Get<std::string>();
+            JSON response;
+            response.Set("id", msg["id"].Get<uint32>());
+            response.Set("error", NULL);
+            response.Set("result", true);
+            SendMessage(response);
         }
         
         void OnMessage(JSON msg)
         {
-            std::string method = msg.Get<std::string>("method");
+            std::string method = msg["method"].Get<std::string>();
             sLog.Debug(LOG_SERVER, "Method: %s", method.c_str());
+            
+            if (method.compare("mining.subscribe") == 0)
+                OnMiningSubscribe(msg);
+            else if (method.compare("mining.authorize") == 0)
+                OnMiningAuthorize(msg);
+            else
+                sLog.Error(LOG_SERVER, "Method '%s' not found.", method.c_str());
         }
+        
+        Job GetJob();
     public:
         void _OnReceive(const boost::system::error_code& error, size_t bytes_transferred)
         {
@@ -57,8 +87,20 @@ namespace Stratum
             OnMessage(JSON::FromString(iss.str()));
         }
     private:
+        // Networking
         asio::streambuf _recvBuffer;
         tcp::socket _socket;
+        
+        // Pointer to server
+        Stratum::Server* _server;
+        
+        // Authorization
+        std::vector<std::string> _workers;
+        
+        // Jobs
+        bool _subscribed;
+        uint32 _extranonce;
+        std::vector<Job> _jobs;
     };
 }
 

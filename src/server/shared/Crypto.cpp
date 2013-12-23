@@ -2,7 +2,7 @@
 
 namespace Crypto
 {
-    std::vector<byte> SHA256(std::vector<byte> data)
+    BinaryData SHA256(BinaryData data)
     {
         std::vector<byte> hash;
         hash.resize(SHA256_DIGEST_LENGTH);
@@ -13,12 +13,12 @@ namespace Crypto
         return std::vector<byte>(hash.begin(), hash.end());
     }
     
-    std::vector<byte> SHA256(std::string data)
+    BinaryData SHA256(std::string data)
     {
-        return SHA256(std::vector<byte>(data.begin(), data.end()));
+        return SHA256(BinaryData(data.begin(), data.end()));
     }
     
-    std::vector<byte> SHA256D(std::vector<byte> data)
+    BinaryData SHA256D(BinaryData data)
     {
         return SHA256(SHA256(data));
     }

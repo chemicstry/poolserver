@@ -48,7 +48,7 @@ ByteBuffer& Bitcoin::operator>>(ByteBuffer& a, Script& b)
 {
     VarInt size;
     a >> size;
-    b.script = a.ReadBytes(size);
+    b.script = a.ReadBinary(size);
     return a;
 }
 
@@ -61,7 +61,7 @@ ByteBuffer& Bitcoin::operator<<(ByteBuffer& a, OutPoint& b)
 }
 ByteBuffer& Bitcoin::operator>>(ByteBuffer& a, OutPoint& b)
 {
-    b.hash = a.ReadBytes(32);
+    b.hash = a.ReadBinary(32);
     a >> b.n;
     return a;
 }
@@ -163,8 +163,8 @@ ByteBuffer& Bitcoin::operator<<(ByteBuffer& a, Block& b)
 ByteBuffer& Bitcoin::operator>>(ByteBuffer& a, Block& b)
 {
     a >> b.version;
-    b.prevBlockHash = a.ReadBytes(32);
-    b.merkleRootHash = a.ReadBytes(32);
+    b.prevBlockHash = a.ReadBinary(32);
+    b.merkleRootHash = a.ReadBinary(32);
     a >> b.time;
     a >> b.bits;
     a >> b.nonce;

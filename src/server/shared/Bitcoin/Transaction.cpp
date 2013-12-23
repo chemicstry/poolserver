@@ -3,10 +3,10 @@
 
 namespace Bitcoin
 {
-    std::vector<byte> Transaction::GetHash()
+    BinaryData Transaction::GetHash()
     {
         ByteBuffer buf;
         buf << *this;
-        return Crypto::SHA256D(buf.Bytes());
+        return Crypto::SHA256D(buf.Binary());
     }
 }

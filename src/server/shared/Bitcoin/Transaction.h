@@ -12,7 +12,7 @@ namespace Bitcoin
     class OutPoint
     {
     public:
-        std::vector<byte> hash;
+        BinaryData hash;
         uint32 n;
     };
     
@@ -51,7 +51,7 @@ namespace Bitcoin
         std::vector<TxOut> out;
         uint32 lockTime;
         
-        std::vector<byte> GetHash();
+        BinaryData GetHash();
     };
     
     // Transaction Serialization (Implementation in Serialization.cpp)

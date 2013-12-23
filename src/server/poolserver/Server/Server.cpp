@@ -34,7 +34,8 @@ int Server::Run()
     sLog.Info(LOG_SERVER, "Server is starting...");
     
     //InitDatabase();
-    std::vector<byte> test = Util::ASCIIToBin("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b");
+    
+    /*std::vector<byte> test = Util::ASCIIToBin("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b");
     sLog.Info(LOG_SERVER, "Hash: %s", Util::BinToASCII(Crypto::SHA256D(test)).c_str());
     sLog.Info(LOG_SERVER, "RevHash: %s", Util::BinToASCII(Crypto::SHA256D(Util::Reverse(test))).c_str());
     
@@ -56,7 +57,7 @@ int Server::Run()
     block.tx.resize(1);
     block.tx[0] = trans;
     block.BuildMerkleTree();
-    sLog.Info(LOG_SERVER, "Hash: %s", Util::BinToASCII(block.merkleRootHash).c_str());
+    sLog.Info(LOG_SERVER, "Hash: %s", Util::BinToASCII(block.merkleRootHash).c_str());*/
     
     /*ByteBuffer buf(Util::ASCIIToBin("01000000010c432f4fb3e871a8bda638350b3d5c698cf431db8d6031b53e3fb5159e59d4a90000000000ffffffff0100f2052a010000001976a9143744841e13b90b4aca16fe793a7f88da3a23cc7188ac00000000"));
     
@@ -78,8 +79,8 @@ int Server::Run()
     // Init Bitcoin RPC
     JSONRPCConnectionInfo coninfo;
     coninfo.Host = "84.240.15.208";
-    coninfo.Port = "9902";
-    coninfo.User = "ppcuser";
+    coninfo.Port = "8332";
+    coninfo.User = "user";
     coninfo.Pass = "DYAL6bC4RUHksL6ikdx7";
     
     JSONRPC* bitcoinrpc = new JSONRPC();

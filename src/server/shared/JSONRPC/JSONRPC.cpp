@@ -107,18 +107,21 @@ JSON JSONRPC::Query(std::string method, JSON params)
     
     std::string jsonresponse = "";
     
+    if (_sock.available())
+        boost::asio::read_until(_sock, response, '\n');
+    
     if (response.size() > 0) {
         std::ostringstream oss;
         oss << &response;
         jsonresponse += oss.str();
     }
-
+    
     // Read until EOF, writing data to output as we go.
-    while(boost::asio::read(_sock, response, boost::asio::transfer_at_least(1), error)){
+    /*while (_sock.available() && boost::asio::read(_sock, response, error)){
         std::ostringstream oss;
         oss << &response;
         jsonresponse += oss.str();
-    }
+    }*/
     
     _sock.close();
     
