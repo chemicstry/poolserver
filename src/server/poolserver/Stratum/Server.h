@@ -31,6 +31,7 @@ namespace Stratum
     public:
         Server(asio::io_service& io_service) : _io_service(io_service), _acceptor(io_service), _blockCheckTimer(io_service), _blockHeight(0), _extranonce(0)
         {
+            _pubkey = Util::ASCIIToBin(sConfig.Get<std::string>("MiningAddress"));
         }
         
         ~Server()
@@ -104,20 +105,20 @@ namespace Stratum
             
             Bitcoin::BlockPtr block = Bitcoin::BlockPtr(new Bitcoin::Block());
             
-            block->version = response["version"].Get<uint32>();;
-            block->prevBlockHash = Util::ASCIIToBin(response["previousblockhash"].Get<std::string>());
-            
+            block->version = response["version"].GetInt();
+            block->prevBlockHash = Util::ASCIIToBin(response["previousblockhash"].GetString());
+            block->time = response["curtime"].GetInt();
             // Set bits
-            ByteBuffer bitbuf(Util::ASCIIToBin(response["bits"].Get<std::string>()));
+            ByteBuffer bitbuf(Util::ASCIIToBin(response["bits"].GetString()));
             bitbuf >> block->bits;
             
             // Add coinbase tx
-            block->tx.push_back(CreateCoinbaseTX(_blockHeight, _pubkey, response["coinbasevalue"].Get<int64>()));
+            block->tx.push_back(CreateCoinbaseTX(_blockHeight, _pubkey, response["coinbasevalue"].GetInt()));
             
             // Add other transactions
             JSON trans = response["transactions"];
             for (uint64 i = 0; i < trans.Size(); ++i) {
-                ByteBuffer txbuf(Util::ASCIIToBin(trans[i]["data"].Get<std::string>()));
+                ByteBuffer txbuf(Util::ASCIIToBin(trans[i]["data"].GetString()));
                 Bitcoin::Transaction tx;
                 txbuf >> tx;
                 block->tx.push_back(tx);
@@ -135,7 +136,7 @@ namespace Stratum
             sLog.Debug(LOG_STRATUM, "Checking for new blocks...");
             
             JSON response = _bitcoinrpc->Query("getinfo");
-            uint32 curBlock = response["blocks"].Get<uint32>();
+            uint32 curBlock = response["blocks"].GetInt();
             
             if (curBlock > _blockHeight) {
                 sLog.Debug(LOG_STRATUM, "New block on network! Height: %u", curBlock);
@@ -149,8 +150,10 @@ namespace Stratum
         
         Bitcoin::Transaction CreateCoinbaseTX(uint32 blockHeight, BinaryData pubkey, int64 value)
         {
+            // Extranonce placeholder
+            BinaryData extranonce_ph(8, 0);
             ByteBuffer scriptsig;
-            scriptsig << _blockHeight;
+            scriptsig << _blockHeight << extranonce_ph;
             
             Bitcoin::OutPoint outpoint;
             outpoint.hash.resize(32, 0);

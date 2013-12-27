@@ -28,6 +28,7 @@ namespace Bitcoin
         
         // Other data
         std::vector<BinaryData> merkleTree;
+        uint64 merkleBranches;
         
         void BuildMerkleTree()
         {
@@ -39,6 +40,9 @@ namespace Bitcoin
                 branches *= 2;
                 ++levels;
             }
+            
+            // Used when sending merkle branches
+            merkleBranches = branches;
             
             // Add transactions
             for (uint64 i = 0; i < branches; ++i)

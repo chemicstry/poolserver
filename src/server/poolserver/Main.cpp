@@ -34,6 +34,7 @@ bool InitConfig(int argc, char *argv[])
     // Server
     descServer.add_options()
         ("MinDiffTime", boost::program_options::value<uint32_t>()->default_value(100), "Minimum server diff time")
+        ("MiningAddress", boost::program_options::value<std::string>()->default_value("n1w8gkPXdNGb6edm4vujBn71A72eQFCNCw"), "Address to send coins to")
     ;
     
     // Stratum

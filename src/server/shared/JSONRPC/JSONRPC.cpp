@@ -43,12 +43,12 @@ bool JSONRPC::Connect(JSONRPCConnectionInfo connInfo)
 
 JSON JSONRPC::Query(std::string method, JSON params)
 {
-    JSON request(true);
-    request.Set("jsonrpc", "1.0");
-    request.Set("id", 1);
-    request.Set("method", method);
+    JSON request;
+    request["jsonrpc"] = "1.0";
+    request["id"] = int64(1);
+    request["method"] = method;
     if (params.Size() > 0)
-        request.Set("params", params);
+        request["params"] = params;
     std::string jsonstring = request.ToString();
     
     sLog.Debug(LOG_JSONRPC, "JSONRPC::Query(): JSONString: %s", jsonstring.c_str());
@@ -61,7 +61,7 @@ JSON JSONRPC::Query(std::string method, JSON params)
     if (error)
     {
         sLog.Error(LOG_JSONRPC, "JSONRPC::Query(): Error connecting to '%s': %s", _connInfo.Host.c_str(), boost::system::system_error(error).what());
-        return NULL;
+        throw "fail";
     }
 
     boost::asio::streambuf request_buf;
@@ -91,13 +91,13 @@ JSON JSONRPC::Query(std::string method, JSON params)
     if (!response_stream || http_version.substr(0, 5) != "HTTP/")
     {
         sLog.Error(LOG_JSONRPC, "JSONRPC::Query(): Malformed HTTP Response");
-        return NULL;
+        throw "fail";
     }
     
     if (status_code != 200)
     {
         sLog.Error(LOG_JSONRPC, "JSONRPC::Query(): Returned status code: %u", status_code);
-        return NULL;
+        throw "fail";
     }
     
     std::vector<std::string> headers;

@@ -8,7 +8,7 @@ namespace Stratum
     class Job
     {
     public:
-        Bitcoin::BlockPtr work;
+        Bitcoin::BlockPtr block;
     };
 }
 

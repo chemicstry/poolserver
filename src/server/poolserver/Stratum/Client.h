@@ -22,7 +22,7 @@ namespace Stratum
     class Client
     {
     public:
-        Client(Server* server, asio::io_service& io_service) : _server(server), _socket(io_service), _subscribed(false)
+        Client(Server* server, asio::io_service& io_service) : _server(server), _socket(io_service), _subscribed(false), _jobid(0)
         {
         }
         
@@ -40,13 +40,12 @@ namespace Stratum
                 boost::bind(&Client::_OnReceive, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
         }
         
-        void SendJob()
-        {
-        }
+        void SendJob(bool clean);
         
         void SendMessage(JSON msg)
         {
             std::string data = msg.ToString();
+            data += '\n';
             sLog.Debug(LOG_SERVER, "Sending: %s", data.c_str());
             _socket.send(boost::asio::buffer(data.c_str(), data.length()));
         }
@@ -55,17 +54,17 @@ namespace Stratum
         
         void OnMiningAuthorize(JSON msg)
         {
-            std::string username = msg["result"][0].Get<std::string>();
+            std::string username = msg["result"][0].GetString();
             JSON response;
-            response.Set("id", msg["id"].Get<uint32>());
-            response.Set("error", NULL);
-            response.Set("result", true);
+            response["id"] = msg["id"].GetInt();
+            response["error"];
+            response["result"] = true;
             SendMessage(response);
         }
         
         void OnMessage(JSON msg)
         {
-            std::string method = msg["method"].Get<std::string>();
+            std::string method = msg["method"].GetString();
             sLog.Debug(LOG_SERVER, "Method: %s", method.c_str());
             
             if (method.compare("mining.subscribe") == 0)
@@ -100,7 +99,8 @@ namespace Stratum
         // Jobs
         bool _subscribed;
         uint32 _extranonce;
-        std::vector<Job> _jobs;
+        std::map<uint64, Job> _jobs;
+        uint64 _jobid;
     };
 }
 

@@ -8,6 +8,13 @@ class ByteBuffer
 {
 public:
     ByteBuffer(): pointer(0) {}
+    
+    template<typename T>
+    ByteBuffer(T data): pointer(0)
+    {
+        Append<T>(data);
+    }
+    
     ByteBuffer(BinaryData data): pointer(0), vec(data) {}
     
     ByteBuffer& operator<<(ByteBuffer& b)

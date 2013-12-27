@@ -4,85 +4,235 @@
 #include "Common.h"
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include <boost/cstdint.hpp>
+#include <boost/variant.hpp>
 #include <string>
 #include <utility>
+#include <sstream>
+#include <vector>
+#include <map>
+#include <Log.h>
+
+enum JSONValueType
+{
+    JSON_NULL       = 0,
+    JSON_ARRAY      = 1,
+    JSON_OBJECT     = 2,
+    JSON_BOOL       = 3,
+    JSON_INTEGER    = 4,
+    JSON_DOUBLE     = 5,
+    JSON_STRING     = 6
+};
+
+typedef boost::variant<bool, int64, double, std::string> JSONValue;
 
 class JSON
 {
 public:
     static JSON FromString(std::string jsonstring);
     
-    JSON(bool base = true) : _base(base), pt(NULL)
+    JSON(JSONValueType type = JSON_NULL) : _type(type)
     {
-        if (base)
-            pt = new boost::property_tree::ptree();
     }
     
     ~JSON()
     {
-        //if (_base && pt)
-        //    delete pt;
     }
     
-    template<class T>
-    T Get()
+    // Arrays
+    JSON& operator[] (uint32 index)
     {
-        return pt->get_value<T>();
+        return _vec[index];
     }
     
-    JSON operator[] (std::string key)
+    template<typename T>
+    void Add(T val)
     {
-        JSON json(false);
-        json.pt = &pt->get_child(key);
-        return json;
+        if (_type != JSON_ARRAY) {
+            if (_type != JSON_NULL)
+                throw "Bad type";
+            else
+                _type = JSON_ARRAY;
+        }
+        
+        JSON node;
+        node = val;
+        _vec.push_back(node);
     }
     
-    JSON operator[] (uint32 index)
+    void AddNull()
     {
-        JSON json(false);
-        boost::property_tree::ptree::iterator it = pt->begin();
-        for (int i = 0; i < index; ++i)
-            ++it;
-        boost::property_tree::ptree::value_type& kv = *it;
-        json.pt = &kv.second;
-        return json;
+        if (_type != JSON_ARRAY) {
+            if (_type != JSON_NULL)
+                throw "Bad type";
+            else
+                _type = JSON_ARRAY;
+        }
+        
+        JSON node;
+        _vec.push_back(node);
     }
     
-    template<class T>
-    inline void Set(std::string key, T value)
+    // Objects
+    JSON& operator[] (std::string key)
     {
-        pt->put<T>(key, value);
+        if (_type != JSON_OBJECT) {
+            if (_type != JSON_NULL)
+                throw "Bad type";
+            else
+                _type = JSON_OBJECT;
+        }
+        
+        // Keep insertion order
+        if (!_map.count(key))
+            _mapOrder.push_back(key);
+        
+        // std::map[] automatically creates key if it does not exist
+        return _map[key];
     }
     
-    template<class T>
-    inline void Add(T value)
+    template<typename T>
+    void Set(std::string key, T val)
     {
-        pt->push_back(std::make_pair("", value));
+        if (_type != JSON_OBJECT) {
+            if (_type != JSON_NULL)
+                throw "Bad type";
+            else
+                _type = JSON_OBJECT;
+        }
+        
+        // Keep insertion order
+        if (!_map.count(key))
+            _mapOrder.push_back(key);
+        
+        // std::map[] automatically creates key if it does not exist
+        _map[key] = val;
     }
     
-    uint64_t Size()
+    // Primitive types
+    bool GetBool()
     {
-        return pt->size();
+        if (_type != JSON_BOOL)
+            throw "Bad type";
+        
+        return boost::get<bool>(_val);
     }
     
+    void operator= (bool val)
+    {
+        _type = JSON_BOOL;
+        _val = val;
+    }
+    
+    int64 GetInt()
+    {
+        if (_type != JSON_INTEGER)
+            throw "Bad type";
+        
+        return boost::get<int64>(_val);
+    }
+    
+    void operator= (int64 val)
+    {
+        _type = JSON_INTEGER;
+        _val = val;
+    }
+    
+    double GetDouble()
+    {
+        if (_type != JSON_DOUBLE)
+            throw "Bad type";
+        
+        return boost::get<double>(_val);
+    }
+    
+    void operator= (double val)
+    {
+        _type = JSON_DOUBLE;
+        _val = val;
+    }
+    
+    std::string GetString()
+    {
+        if (_type != JSON_STRING)
+            throw "Bad type";
+        
+        return boost::get<std::string>(_val);
+    }
+    
+    void operator= (std::string val)
+    {
+        _type = JSON_STRING;
+        _val = val;
+    }
+    
+    // Fix for static strings
+    void operator= (const char* val)
+    {
+        _type = JSON_STRING;
+        _val = std::string(val);
+    }
+    
+    // Generic function
+    bool Empty()
+    {
+        if (_type == JSON_NULL)
+            return true;
+        else
+            return false;
+    }
+    
+    uint32 Size()
+    {
+        if (_type == JSON_ARRAY)
+            return _vec.size();
+        else if (_type == JSON_OBJECT)
+            return _map.size();
+        else
+            throw "Type has no size";
+    }
+    
+    JSONValueType GetType()
+    {
+        return _type;
+    }
+    
+    void SetType(JSONValueType type)
+    {
+        _type = type;
+    }
+    
+    // Used for writting
+    std::string EscapeString(std::string);
     std::string ToString();
+    void Write(std::stringstream& ss);
+    void SetRaw(std::string val);
+    void AddRaw(std::string val);
     
-    boost::property_tree::ptree* pt;
-    bool _base;
+    std::string hackfix;
+private:
+    // Vector is used to store arrays
+    std::vector<JSON> _vec;
+    // Map is used to store objects
+    std::map<std::string, JSON> _map;
+    // Map insertion order
+    std::vector<std::string> _mapOrder;
+    // Boost variant stores primitive types
+    JSONValue _val;
+    
+    JSONValueType _type;
 };
 
-
 template<>
-inline void JSON::Set<JSON>(std::string key, JSON value)
+inline void JSON::Add(JSON& node)
 {
-    pt->put_child(key, *value.pt);
-}
-
-template<>
-inline void JSON::Add<JSON>(JSON value)
-{
-    pt->push_back(std::make_pair("", *value.pt));
+    if (_type != JSON_ARRAY) {
+        if (_type != JSON_NULL)
+            throw "Bad type";
+        else
+            _type = JSON_ARRAY;
+    }
+    
+    _vec.push_back(node);
 }
 
 #endif
