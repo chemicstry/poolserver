@@ -85,6 +85,11 @@ public:
         return vec;
     }
     
+    uint64 Size()
+    {
+        return vec.size();
+    }
+    
     uint64 pointer;
     BinaryData vec;
 };

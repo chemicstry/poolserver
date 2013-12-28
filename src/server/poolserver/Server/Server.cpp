@@ -35,7 +35,8 @@ int Server::Run()
     
     //InitDatabase();
     
-    JSON node = JSON::FromString("{\"test\":{\"omg\":\"smth\"},\"other\":\"smth2\"}");
+    JSON node = JSON::FromString("{\"test\":{\"omg\":\"smth\"},\"other\":[\"smth2\", \"smth3\"] }");
+    sLog.Info(LOG_SERVER, "Something2: %s", node["other"][0].GetString().c_str());
     sLog.Info(LOG_SERVER, "Something: %s", node.ToString().c_str());
     
     /*std::vector<byte> test = Util::ASCIIToBin("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b");

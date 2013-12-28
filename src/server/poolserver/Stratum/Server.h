@@ -69,7 +69,9 @@ namespace Stratum
         
         uint32 GetExtranonce()
         {
-            return _extranonce++;
+            //return 134217730;
+            return 33554440;
+            //return _extranonce++;
         }
         
         Bitcoin::BlockPtr GetWork()
@@ -106,23 +108,29 @@ namespace Stratum
             Bitcoin::BlockPtr block = Bitcoin::BlockPtr(new Bitcoin::Block());
             
             block->version = response["version"].GetInt();
-            block->prevBlockHash = Util::ASCIIToBin(response["previousblockhash"].GetString());
+            block->prevBlockHash = Util::Reverse(Util::ASCIIToBin(response["previousblockhash"].GetString()));
             block->time = response["curtime"].GetInt();
             // Set bits
-            ByteBuffer bitbuf(Util::ASCIIToBin(response["bits"].GetString()));
+            ByteBuffer bitbuf(Util::Reverse(Util::ASCIIToBin(response["bits"].GetString())));
             bitbuf >> block->bits;
             
             // Add coinbase tx
             block->tx.push_back(CreateCoinbaseTX(_blockHeight, _pubkey, response["coinbasevalue"].GetInt()));
             
             // Add other transactions
-            JSON trans = response["transactions"];
+            /*JSON trans = response["transactions"];
             for (uint64 i = 0; i < trans.Size(); ++i) {
                 ByteBuffer txbuf(Util::ASCIIToBin(trans[i]["data"].GetString()));
                 Bitcoin::Transaction tx;
                 txbuf >> tx;
                 block->tx.push_back(tx);
-            }
+            }*/
+            /*Bitcoin::BlockPtr block = Bitcoin::BlockPtr(new Bitcoin::Block());
+            block->version = 2;
+            block->prevBlockHash = Util::Reverse(Util::ASCIIToBin("00000000440b921e1b77c6c0487ae5616de67f788f44ae2a5af6e2194d16b6f8"));
+            block->time = 1347323629;
+            block->bits = 472564911;
+            block->tx.push_back(CreateCoinbaseTX(25096, _pubkey, 50));*/
             
             // Genrate merkle tree
             block->BuildMerkleTree();

@@ -3,6 +3,6 @@
 
 #include <gmpxx.h>
 
-typedef mpz_class BigNum;
+typedef mpz_class BigInt;
 
 #endif

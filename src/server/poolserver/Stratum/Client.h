@@ -33,6 +33,11 @@ namespace Stratum
         
         void Start()
         {
+            StartRead();
+        }
+        
+        void StartRead()
+        {
             boost::asio::async_read_until(
                 _socket,
                 _recvBuffer,
@@ -47,27 +52,24 @@ namespace Stratum
             std::string data = msg.ToString();
             data += '\n';
             sLog.Debug(LOG_SERVER, "Sending: %s", data.c_str());
-            _socket.send(boost::asio::buffer(data.c_str(), data.length()));
+            boost::asio::async_write(
+                _socket,
+                boost::asio::buffer(data.c_str(), data.length()),
+                boost::bind(&Client::_OnSend, this, boost::asio::placeholders::error));
         }
         
+        void OnMiningSubmit(JSON msg);
         void OnMiningSubscribe(JSON msg);
-        
-        void OnMiningAuthorize(JSON msg)
-        {
-            std::string username = msg["result"][0].GetString();
-            JSON response;
-            response["id"] = msg["id"].GetInt();
-            response["error"];
-            response["result"] = true;
-            SendMessage(response);
-        }
+        void OnMiningAuthorize(JSON msg);
         
         void OnMessage(JSON msg)
         {
             std::string method = msg["method"].GetString();
-            sLog.Debug(LOG_SERVER, "Method: %s", method.c_str());
+            sLog.Debug(LOG_SERVER, "Decoded: %s", msg.ToString().c_str());
             
-            if (method.compare("mining.subscribe") == 0)
+            if (method.compare("mining.submit") == 0)
+                OnMiningSubmit(msg);
+            else if (method.compare("mining.subscribe") == 0)
                 OnMiningSubscribe(msg);
             else if (method.compare("mining.authorize") == 0)
                 OnMiningAuthorize(msg);
@@ -84,6 +86,15 @@ namespace Stratum
             iss << is.rdbuf();
             sLog.Debug(LOG_SERVER, "Received: %s", iss.str().c_str());
             OnMessage(JSON::FromString(iss.str()));
+            
+            StartRead();
+        }
+        void _OnSend(const boost::system::error_code& error)
+        {
+            if (error)
+                sLog.Error(LOG_SERVER, "Failed to send data");
+            else
+                sLog.Debug(LOG_SERVER, "Data sent");
         }
     private:
         // Networking
@@ -100,7 +111,7 @@ namespace Stratum
         bool _subscribed;
         uint32 _extranonce;
         std::map<uint64, Job> _jobs;
-        uint64 _jobid;
+        uint32 _jobid;
     };
 }
 
