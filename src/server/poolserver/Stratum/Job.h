@@ -16,6 +16,8 @@ namespace Stratum
         BinaryData coinbase2;
         std::set<std::string> shares;
         
+        // Submits share to a job
+        // Returns false if the same share already exists
         bool SubmitShare(BinaryData share)
         {
             std::string sharestr = Util::BinToASCII(Crypto::SHA256(share));

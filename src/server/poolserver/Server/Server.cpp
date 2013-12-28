@@ -81,11 +81,16 @@ int Server::Run()
     Stratum::Server srv(io_service);
     
     // Init Bitcoin RPC
-    JSONRPCConnectionInfo coninfo;
+    /*JSONRPCConnectionInfo coninfo;
     coninfo.Host = "84.240.15.208";
     coninfo.Port = "8332";
     coninfo.User = "user";
-    coninfo.Pass = "DYAL6bC4RUHksL6ikdx7";
+    coninfo.Pass = "DYAL6bC4RUHksL6ikdx7";*/
+    JSONRPCConnectionInfo coninfo;
+    coninfo.Host = "127.0.0.1";
+    coninfo.Port = "19001";
+    coninfo.User = "test";
+    coninfo.Pass = "123";
     
     JSONRPC* bitcoinrpc = new JSONRPC();
     bitcoinrpc->Connect(coninfo);

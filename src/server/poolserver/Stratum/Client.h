@@ -9,6 +9,8 @@
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
 #define MAX_PACKET 2048
 
@@ -19,7 +21,7 @@ namespace Stratum
 {
     class Server;
     
-    class Client
+    class Client : public boost::enable_shared_from_this<Client>
     {
     public:
         Client(Server* server, asio::io_service& io_service) : _server(server), _socket(io_service), _subscribed(false), _jobid(0)
@@ -33,11 +35,13 @@ namespace Stratum
         
         void Start()
         {
+            // Start reading socket
             StartRead();
         }
         
         void StartRead()
         {
+            // Read until newline
             boost::asio::async_read_until(
                 _socket,
                 _recvBuffer,
@@ -77,25 +81,17 @@ namespace Stratum
                 sLog.Error(LOG_SERVER, "Method '%s' not found.", method.c_str());
         }
         
+        // Gets new job from the server
         Job GetJob();
+        
+        void Disconnect()
+        {
+            _socket.close();
+        }
     public:
-        void _OnReceive(const boost::system::error_code& error, size_t bytes_transferred)
-        {
-            std::istream is(&_recvBuffer);
-            std::stringstream iss;
-            iss << is.rdbuf();
-            sLog.Debug(LOG_SERVER, "Received: %s", iss.str().c_str());
-            OnMessage(JSON::FromString(iss.str()));
-            
-            StartRead();
-        }
-        void _OnSend(const boost::system::error_code& error)
-        {
-            if (error)
-                sLog.Error(LOG_SERVER, "Failed to send data");
-            else
-                sLog.Debug(LOG_SERVER, "Data sent");
-        }
+        void _OnReceive(const boost::system::error_code& error, size_t bytes_transferred);
+        void _OnSend(const boost::system::error_code& error);
+        
     private:
         // Networking
         asio::streambuf _recvBuffer;
@@ -113,6 +109,8 @@ namespace Stratum
         std::map<uint64, Job> _jobs;
         uint32 _jobid;
     };
+    
+    typedef boost::shared_ptr<Client> ClientPtr;
 }
 
 #endif

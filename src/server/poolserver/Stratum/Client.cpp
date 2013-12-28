@@ -53,7 +53,6 @@ namespace Stratum
     
     void Client::OnMiningSubmit(JSON msg)
     {
-        //msg = JSON::FromString("{\"params\": [\"slush.miner1\", \"00000000\", \"00000001\", \"504e86ed\", \"b2957c02\"], \"id\": 4, \"method\": \"mining.submit\"}");
         JSON params = msg["params"];
         
         std::string username = params[0].GetString();
@@ -102,55 +101,61 @@ namespace Stratum
             return;
         }
         
-        // Get block we are working on
+        // Copy block we are working on
         Bitcoin::Block block = *job.block;
         
+        // Start assembling the block
         timebuf >> block.time;
         noncebuf >> block.nonce;
         
+        // Assemble coinbase
         Bitcoin::Transaction coinbasetx;
         ByteBuffer coinbasebuf;
         coinbasebuf << job.coinbase1 << _extranonce << extranonce2 << job.coinbase2;
         coinbasebuf >> coinbasetx;
         
+        // Set coinbase tx
         block.tx[0] = coinbasetx;
         
-        ByteBuffer test;
-        test << coinbasetx;
-        sLog.Info(LOG_SERVER, "Coinbase: %s", Util::BinToASCII(test.Binary()).c_str());
         sLog.Info(LOG_SERVER, "Coinbase hash1: %s", Util::BinToASCII(Crypto::SHA256D(coinbasebuf.Binary())).c_str());
         sLog.Info(LOG_SERVER, "Coinbase hash2: %s", Util::BinToASCII(coinbasetx.GetHash()).c_str());
         
+        // Rebuilds only left side of merkle tree
         block.RebuildMerkleTree();
         sLog.Info(LOG_SERVER, "Merklehash: %s", Util::BinToASCII(block.merkleRootHash).c_str());
+        
+        // Get block hash
         BinaryData hash = block.GetHash();
         
         sLog.Info(LOG_SERVER, "Block hash: %s", Util::BinToASCII(hash).c_str());
         
+        // Get block target
         BigInt target(Util::BinToASCII(Util::Reverse(hash)), 16);
+        
+        // Network target criteria
         BigInt criteria(Bitcoin::TargetFromBits(block.bits));
-        BigInt diff = Bitcoin::TargetConvert(criteria);
+        
+        BigInt diff = Bitcoin::TargetToDiff(criteria);
         std::cout << "Target: " << target << std::endl;
         std::cout << "Criteria: " << criteria << std::endl;
         std::cout << "Diff: " << diff << std::endl;
         
+        // Check if block meets criteria
         if (target <= criteria) {
             sLog.Info(LOG_SERVER, "We have found a block candidate!");
             
-            // Serialize block
-            ByteBuffer blockbuf;
-            blockbuf << block;
-            
-            JSON params;
-            params.Add(Util::BinToASCII(blockbuf.Binary()));
-            JSON response = _bitcoinrpc->Query("submitblock", params);
+            _server->SubmitBlock(block);
         } 
     }
     
     void Client::OnMiningSubscribe(JSON msg)
     {
         _subscribed = true;
+        
+        // Get extranonce from server
         _extranonce = _server->GetExtranonce();
+        ByteBuffer noncebuf;
+        noncebuf << _extranonce;
         
         JSON notify;
         notify.Add("mining.notify");
@@ -158,8 +163,6 @@ namespace Stratum
         
         JSON result;
         result.Add(notify);
-        ByteBuffer noncebuf;
-        noncebuf << _extranonce;
         result.Add(Util::BinToASCII(noncebuf.Binary()));
         result.Add(int64(4));
         
@@ -170,14 +173,14 @@ namespace Stratum
         
         SendMessage(response);
         
-        SendJob(true);
+        SendJob(false);
     }
     
     void Client::OnMiningAuthorize(JSON msg)
     {
-        sLog.Info(LOG_SERVER, "Test: %s", msg["params"].ToString().c_str());
         std::string username = msg["params"][0].GetString();
         std::string password = msg["params"][1].GetString();
+        
         JSON response;
         response["id"] = msg["id"].GetInt();
         response["error"];
@@ -190,15 +193,51 @@ namespace Stratum
         Job job;
         job.block = _server->GetWork();
         
-        // Coinbase parts
+        // Serialize transaction
         ByteBuffer coinbasebuf;
         coinbasebuf << job.block->tx[0];
         BinaryData coinbase = coinbasebuf.Binary();
-        // tx.version + tx.in[0].outpoint.hash + tx.in[0].outpoint.n + tx.script (size) + tx.script (block height)
+        
+        // Split coinbase
+        // tx.version                   - 4 bytes
+        // tx.in[0].outpoint.hash       - 32 bytes
+        // tx.in[0].outpoint.n          - 4 bytes
+        // tx.script (varint)           - 2 bytes
+        // tx.script (block height)     - 4 bytes
         uint32 cbsplit = 4 + 32 + 4 + 2 + 4;
         job.coinbase1 = BinaryData(coinbase.begin(), coinbase.begin() + cbsplit);
         job.coinbase2 = BinaryData(coinbase.begin() + cbsplit + 8, coinbase.end()); // plus extranonce size
         
         return job;
+    }
+    
+    void Client::_OnReceive(const boost::system::error_code& error, size_t bytes_transferred)
+    {
+        if (!error) {
+            std::istream is(&_recvBuffer);
+            std::stringstream iss;
+            iss << is.rdbuf();
+            sLog.Debug(LOG_SERVER, "Received: %s", iss.str().c_str());
+            OnMessage(JSON::FromString(iss.str()));
+            
+            StartRead();
+        } else {
+            // Client disconnected
+            if ((error == asio::error::eof) || (error == asio::error::connection_reset)) {
+                _server->Disconnect(shared_from_this());
+            }
+        }
+    }
+    
+    void Client::_OnSend(const boost::system::error_code& error)
+    {
+        if (!error) {
+            // Party
+        } else {
+            // Client disconnected
+            if ((error == asio::error::eof) || (error == asio::error::connection_reset)) {
+                _server->Disconnect(shared_from_this());
+            }
+        }
     }
 }
