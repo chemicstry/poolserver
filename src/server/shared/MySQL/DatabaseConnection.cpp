@@ -123,7 +123,7 @@ namespace MySQL
         rowCount = mysql_affected_rows(_mysql);
         fieldCount = mysql_field_count(_mysql);
 
-        if (!result)
+        if (!*result)
             return false;
 
         if (!rowCount) {
@@ -136,7 +136,7 @@ namespace MySQL
         return true;
     }
     
-    bool DatabaseConnection::_Query(PreparedStatement* stmt, MYSQL_RES** result, MYSQL_STMT** resultSTMT, uint64& rowCount, uint32& fieldCount)
+    bool DatabaseConnection::_Query(PreparedStatement* stmt, MYSQL_RES** result, MYSQL_STMT** resultSTMT, uint32& fieldCount)
     {
         if (!_mysql)
             return false;
@@ -171,7 +171,7 @@ namespace MySQL
             sLog.Error(LOG_DATABASE, "STMT Execute Error[%u]: %s", lErrno, mysql_stmt_error(mSTMT));
 
             if (_HandleMySQLErrno(lErrno))  // If it returns true, an error was handled successfully (i.e. reconnection)
-                return _Query(stmt, result, resultSTMT, rowCount, fieldCount);       // Try again
+                return _Query(stmt, result, resultSTMT, fieldCount);       // Try again
 
             cstmt->ClearParameters();
             return false;
@@ -180,7 +180,6 @@ namespace MySQL
         cstmt->ClearParameters();
         
         *result = mysql_stmt_result_metadata(mSTMT);
-        rowCount = mysql_stmt_num_rows(mSTMT);
         fieldCount = mysql_stmt_field_count(mSTMT);
         *resultSTMT = mSTMT;
         
@@ -237,16 +236,15 @@ namespace MySQL
     {
         MYSQL_RES* result = NULL;
         MYSQL_STMT* resultSTMT = NULL;
-        uint64 rowCount = 0;
         uint32 fieldCount = 0;
 
-        if (!_Query(stmt, &result, &resultSTMT, rowCount, fieldCount))
+        if (!_Query(stmt, &result, &resultSTMT, fieldCount))
             return NULL;
 
         if (mysql_more_results(_mysql))
             mysql_next_result(_mysql);
         
-        return new ResultSet(result, resultSTMT, rowCount, fieldCount);
+        return new ResultSet(result, resultSTMT, fieldCount);
     }
     
     bool DatabaseConnection::PrepareStatement(uint32 index, const char* sql)

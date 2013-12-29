@@ -17,6 +17,11 @@ namespace MySQL
             data.length = 0;
         }
         
+        ~Field()
+        {
+            CleanUp();
+        }
+        
         void SetValue(char* value, enum_field_types type)
         {
             if (data.value)
@@ -51,30 +56,12 @@ namespace MySQL
             data.raw = true;
         }
         
-        uint32_t GetUInt32()
+        template<typename T>
+        T Get()
         {
             if (data.raw)
-                return *reinterpret_cast<uint32*>(data.value);
-            return boost::lexical_cast<uint32_t>(data.value);
-        }
-        
-        char const* GetCString()
-        {
-            return static_cast<char const*>(data.value);
-        }
-        
-        std::string GetString()
-        {
-            if (data.raw)
-                return std::string(GetCString(), data.length);
-            return boost::lexical_cast<std::string>(data.value);
-        }
-        
-        double GetDouble()
-        {
-            if (data.raw)
-                return *reinterpret_cast<double*>(data.value);
-            return boost::lexical_cast<double>(data.value);
+                return *reinterpret_cast<T*>(data.value);
+            return boost::lexical_cast<T>(data.value);
         }
         
         static size_t SizeForType(MYSQL_FIELD* field)
@@ -131,6 +118,20 @@ namespace MySQL
             data.value = NULL;
         }
     };
+    
+    template<>
+    inline const char* Field::Get()
+    {
+        return static_cast<const char*>(data.value);
+    }
+    
+    template<>
+    inline std::string Field::Get()
+    {
+        if (data.raw)
+            return std::string(Get<const char*>(), data.length);
+        return boost::lexical_cast<std::string>(data.value);
+    }
 }
 
 #endif

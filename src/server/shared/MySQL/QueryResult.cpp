@@ -24,13 +24,11 @@ namespace MySQL
     }
     
     // Prepared statement query
-    ResultSet::ResultSet(MYSQL_RES* result, MYSQL_STMT* stmt, uint64 rowCount, uint32 fieldCount) :
-    _rowCount(rowCount), _fieldCount(fieldCount), _currentRow(0)
+    ResultSet::ResultSet(MYSQL_RES* result, MYSQL_STMT* stmt, uint32 fieldCount) :
+    _fieldCount(fieldCount), _currentRow(0)
     {
-        if (stmt->bind_result_done) {
-            delete[] stmt->bind->length;
-            delete[] stmt->bind->is_null;
-        }
+        if (!result)
+            return;
         
         // Store entire result set locally from server
         if (mysql_stmt_store_result(stmt)) {
@@ -104,7 +102,17 @@ namespace MySQL
             _rows.push_back(fields);
         }
         
+        // Free everything
         mysql_free_result(result);
+        
+        for (uint32 i = 0; i < fieldCount; ++i)
+            delete (char *)bind[i].buffer;
+        
+        mysql_stmt_free_result(stmt);
+        
+        delete[] bind;
+        delete[] isNull;
+        delete[] length;
     }
     
     bool ResultSet::_NextSTMTRow(MYSQL_STMT* stmt)

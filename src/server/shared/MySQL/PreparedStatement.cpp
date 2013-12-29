@@ -77,7 +77,7 @@ namespace MySQL
         MYSQL_BIND* param = &_bind[index];
         
         param->buffer_type = type;
-        delete [] static_cast<char *>(param->buffer);
+        delete[] (char *)param->buffer;
         param->buffer = new char[len];
         param->buffer_length = 0;
         param->is_null_value = 0;

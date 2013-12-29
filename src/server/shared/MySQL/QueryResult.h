@@ -18,7 +18,7 @@ namespace MySQL
         // Normal query
         ResultSet(MYSQL_RES* result, MYSQL_FIELD* resultFields, uint64 rowCount, uint32 fieldCount);
         // Prepared statement query
-        ResultSet(MYSQL_RES* result, MYSQL_STMT* stmt, uint64 rowCount, uint32 fieldCount);
+        ResultSet(MYSQL_RES* result, MYSQL_STMT* stmt, uint32 fieldCount);
         ~ResultSet();
         
         // Metadata

@@ -11,6 +11,15 @@
 #include <boost/algorithm/string.hpp>
 #include <iostream>
 #include <algorithm>
+struct Share
+{
+    Share(uint64 _id, uint32 _diff, uint32 _workerid, uint32 _timestamp) :
+    id(_id), diff(_diff), workerid(_workerid), timestamp(_timestamp) {}
+    uint64 id;
+    uint32 diff;
+    uint32 workerid;
+    uint32 timestamp;
+};
 
 Server::Server() : serverLoops(0)
 {
@@ -23,17 +32,36 @@ Server::~Server()
 
 void AsyncQueryCallback(MySQL::QueryResult result)
 {
-    sLog.Info(LOG_SERVER, "Metadata: F: %u R: %u", result->GetFieldCount(), result->GetRowCount());
-    while (MySQL::Field* fields = result->FetchRow()) {
-        sLog.Info(LOG_SERVER, "Row: %i %s", fields[0].GetUInt32(), fields[1].GetString().c_str());
-    }
 }
 
 int Server::Run()
 {
     sLog.Info(LOG_SERVER, "Server is starting...");
     
-    //InitDatabase();
+    InitDatabase();
+    
+    std::vector<Share> shares;
+
+    sLog.Info(LOG_SERVER, "Loading shares...");
+    
+    MySQL::QueryResult result = sDatabase.Query("SELECT MIN(`id`), MAX(`id`) FROM `shares`");
+    MySQL::Field* fields = result->FetchRow();
+    uint32 min = fields[0].Get<uint32>();
+    uint32 max = fields[1].Get<uint32>();
+    sLog.Info(LOG_SERVER, "Min: %u Max: %u", min, max);
+    
+    MySQL::PreparedStatement* stmt = sDatabase.GetPreparedStatement(STMT_QUERY_SHARES);
+    for (uint32 i = min; i < max; i += 500000)
+    {
+        stmt->SetUInt32(0, i);
+        MySQL::QueryResult result2 = sDatabase.Query(stmt);
+        while (MySQL::Field* fields2 = result2->FetchRow()) {
+            shares.push_back(Share(fields2[0].Get<uint64>(), fields2[1].Get<uint32>(), 2981, fields2[2].Get<uint32>()));
+        }
+        sLog.Info(LOG_SERVER, "Shares: %u", shares.size());
+    }
+    
+    sLog.Info(LOG_SERVER, "Loaded %u shares", shares.size());
     
     JSON node = JSON::FromString("{\"test\":{\"omg\":\"smth\"},\"other\":[\"smth2\", \"smth3\"] }");
     sLog.Info(LOG_SERVER, "Something2: %s", node["other"][0].GetString().c_str());

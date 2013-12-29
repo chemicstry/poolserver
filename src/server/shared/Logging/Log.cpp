@@ -4,7 +4,7 @@
 
 Log sLog;
 
-Log::Log(): logfile(NULL)
+Log::Log()
 {
 }
 

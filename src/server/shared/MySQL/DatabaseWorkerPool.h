@@ -17,6 +17,8 @@ namespace MySQL
         DatabaseWorkerPool() : _asyncQueue(new DatabaseWorkQueue()) { }
         ~DatabaseWorkerPool()
         {
+            Close();
+            mysql_library_end();
             delete _asyncQueue;
         }
         

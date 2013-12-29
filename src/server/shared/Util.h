@@ -73,6 +73,11 @@ namespace Util
     class GenericWorker
     {
     public:
+        ~GenericWorker()
+        {
+            delete _thread;
+        }
+        
         void Activate()
         {
             _thread = new boost::thread(boost::bind(&GenericWorker::Work, this));
