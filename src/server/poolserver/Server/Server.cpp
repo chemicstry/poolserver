@@ -6,22 +6,16 @@
 #include "ServerDatabaseEnv.h"
 #include "Crypto.h"
 #include "Bitcoin.h"
+#include "DataMgr.h"
+#include "NetworkMgr.h"
+#include "Exception.h"
 
 #include <boost/thread.hpp>
 #include <boost/algorithm/string.hpp>
 #include <iostream>
 #include <algorithm>
-struct Share
-{
-    Share(uint64 _id, uint32 _diff, uint32 _workerid, uint32 _timestamp) :
-    id(_id), diff(_diff), workerid(_workerid), timestamp(_timestamp) {}
-    uint64 id;
-    uint32 diff;
-    uint32 workerid;
-    uint32 timestamp;
-};
 
-Server::Server() : serverLoops(0)
+Server::Server(asio::io_service& io) : serverLoops(0), io_service(io), uploadtimer(io)
 {
 }
 
@@ -34,13 +28,22 @@ void AsyncQueryCallback(MySQL::QueryResult result)
 {
 }
 
+
+
+void Server::UploadShares(const boost::system::error_code& /*e*/)
+{
+    sDataMgr.Upload();
+    uploadtimer.expires_from_now(boost::posix_time::seconds(3)); //repeat rate here
+    uploadtimer.async_wait(boost::bind(&Server::UploadShares, this, boost::asio::placeholders::error));
+}
+
 int Server::Run()
 {
     sLog.Info(LOG_SERVER, "Server is starting...");
     
     InitDatabase();
     
-    std::vector<Share> shares;
+    /*std::vector<Share> shares;
 
     sLog.Info(LOG_SERVER, "Loading shares...");
     
@@ -51,7 +54,7 @@ int Server::Run()
     sLog.Info(LOG_SERVER, "Min: %u Max: %u", min, max);
     
     MySQL::PreparedStatement* stmt = sDatabase.GetPreparedStatement(STMT_QUERY_SHARES);
-    for (uint32 i = min; i < max; i += 500000)
+    for (uint32 i = min; i <= max; i += 500000)
     {
         stmt->SetUInt32(0, i);
         MySQL::QueryResult result2 = sDatabase.Query(stmt);
@@ -61,11 +64,7 @@ int Server::Run()
         sLog.Info(LOG_SERVER, "Shares: %u", shares.size());
     }
     
-    sLog.Info(LOG_SERVER, "Loaded %u shares", shares.size());
-    
-    JSON node = JSON::FromString("{\"test\":{\"omg\":\"smth\"},\"other\":[\"smth2\", \"smth3\"] }");
-    sLog.Info(LOG_SERVER, "Something2: %s", node["other"][0].GetString().c_str());
-    sLog.Info(LOG_SERVER, "Something: %s", node.ToString().c_str());
+    sLog.Info(LOG_SERVER, "Loaded %u shares", shares.size());*/
     
     /*std::vector<byte> test = Util::ASCIIToBin("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b");
     sLog.Info(LOG_SERVER, "Hash: %s", Util::BinToASCII(Crypto::SHA256D(test)).c_str());
@@ -103,30 +102,33 @@ int Server::Run()
     
     
     
-    // Main io service
-    asio::io_service io_service;
+    NetworkMgr::Initialize(io_service);
+    
+    std::vector<std::string> btcrpc = sConfig.Get<std::vector<std::string> >("BitcoinRPC");
+    for (int i = 0; i < btcrpc.size(); ++i) {
+        std::vector<std::string> params = Util::Explode(btcrpc[i], ";");
+        
+        if (params.size() != 4)
+            throw Exception("Invalid Bitcoin RPC parameters");
+        
+        JSONRPCConnectionInfo coninfo;
+        coninfo.Host = params[0];
+        coninfo.Port = params[1];
+        coninfo.User = params[2];
+        coninfo.Pass = params[3];
+        
+        NetworkMgr::Instance()->Connect(coninfo);
+    }
     
     Stratum::Server srv(io_service);
-    
-    // Init Bitcoin RPC
-    /*JSONRPCConnectionInfo coninfo;
-    coninfo.Host = "84.240.15.208";
-    coninfo.Port = "8332";
-    coninfo.User = "user";
-    coninfo.Pass = "DYAL6bC4RUHksL6ikdx7";*/
-    JSONRPCConnectionInfo coninfo;
-    coninfo.Host = "127.0.0.1";
-    coninfo.Port = "19001";
-    coninfo.User = "test";
-    coninfo.Pass = "123";
-    
-    JSONRPC* bitcoinrpc = new JSONRPC();
-    bitcoinrpc->Connect(coninfo);
-    srv.SetBitcoinRPC(bitcoinrpc);
     
     // Start stratum server
     tcp::endpoint endpoint(tcp::v4(), sConfig.Get<uint16>("StratumPort"));
     srv.Start(endpoint);
+    
+    // Start timer
+    uploadtimer.expires_from_now(boost::posix_time::seconds(3)); //repeat rate here
+    uploadtimer.async_wait(boost::bind(&Server::UploadShares, this,  boost::asio::placeholders::error));
     
     io_service.run();
     
@@ -182,7 +184,7 @@ int Server::Run()
         // Mercy for CPU
         if (diff < minDiffTime+sleepDuration) {
             sleepDuration = minDiffTime - diff + sleepDuration;
-            boost::this_thread::sleep_for(boost::chrono::milliseconds(sleepDuration));
+            boost::this_thread::sleep(boost::posix_time::milliseconds(sleepDuration));
         } else
             sleepDuration = 0;
 

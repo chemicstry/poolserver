@@ -1,14 +1,16 @@
 #ifndef DATABASE_CONNECTION_MYSQL_H_
 #define DATABASE_CONNECTION_MYSQL_H_
 
+#include <boost/thread.hpp>
+#include <mysql.h>
+#include <string>
+
 #include "DatabaseOperation.h"
 #include "DatabaseWorker.h"
 #include "QueryResult.h"
 #include "PreparedStatement.h"
 #include "Log.h"
-
-#include <boost/thread.hpp>
-#include <mysql.h>
+#include "Exception.h"
 
 namespace MySQL
 {
@@ -26,6 +28,13 @@ namespace MySQL
         std::string User;
         std::string Pass;
         std::string DB;
+    };
+    
+    class ConnectionException: public Exception
+    {
+    public:
+        ConnectionException(const char *text): Exception(text) {}
+        ConnectionException(std::string text): Exception(text) {}
     };
 
     class DatabaseConnection

@@ -1,5 +1,6 @@
 #include "DatabaseConnection.h"
 #include "Log.h"
+#include "Util.h"
 
 namespace MySQL
 {
@@ -28,10 +29,7 @@ namespace MySQL
         MYSQL* mysqlInit;
         mysqlInit = mysql_init(NULL);
         if (!mysqlInit)
-        {
-            sLog.Error(LOG_DATABASE, "Could not initialize Mysql connection to database `%s`", _connectionInfo.DB.c_str());
-            return false;
-        }
+            throw ConnectionException(Util::FS("Could not initialize Mysql connection to database `%s`", _connectionInfo.DB.c_str()));
 
         mysql_options(mysqlInit, MYSQL_SET_CHARSET_NAME, "utf8");
 
@@ -51,9 +49,9 @@ namespace MySQL
         }
         else
         {
-            sLog.Error(LOG_DATABASE, "Could not connect to MySQL database at %s: %s\n", _connectionInfo.Host.c_str(), mysql_error(mysqlInit));
+            const char* error = mysql_error(mysqlInit);
             mysql_close(mysqlInit);
-            return false;
+            throw ConnectionException(Util::FS("Could not connect to MySQL database at %s: %s", _connectionInfo.Host.c_str(), mysql_error(mysqlInit)));
         }
     }
 

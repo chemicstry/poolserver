@@ -3,6 +3,11 @@
 
 #include <boost/cstdint.hpp>
 #include <vector>
+#include <string>
+#include <cstdio>
+#include <cstdarg>
+
+#define MAX_FORMAT_LEN 32*1024
 
 typedef uint8_t uint8;
 typedef uint16_t uint16;

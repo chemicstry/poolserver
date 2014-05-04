@@ -2,10 +2,12 @@
 #define STRATUM_CLIENT_H_
 
 #include "Common.h"
+#include "Config.h"
 #include "Log.h"
 #include "JSON.h"
 #include "Server.h"
 #include "Job.h"
+#include "ShareLimiter.h"
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
@@ -24,8 +26,10 @@ namespace Stratum
     class Client : public boost::enable_shared_from_this<Client>
     {
     public:
-        Client(Server* server, asio::io_service& io_service) : _server(server), _socket(io_service), _subscribed(false), _jobid(0)
+        Client(Server* server, asio::io_service& io_service, uint64 id) : _server(server), _socket(io_service), _id(id), _subscribed(false), _jobid(0), _shareLimiter(this)
         {
+            _diff = sConfig.Get<uint32>("StratumMinDifficulty");
+            _minDiff = _diff;
         }
         
         tcp::socket& GetSocket()
@@ -35,6 +39,11 @@ namespace Stratum
         
         void Start()
         {
+            // Get IP
+            tcp::endpoint remote_ep = _socket.remote_endpoint();
+            address remote_ad = remote_ep.address();
+            _ip = remote_ad.to_v4().to_ulong();
+            
             // Start reading socket
             StartRead();
         }
@@ -84,6 +93,36 @@ namespace Stratum
         // Gets new job from the server
         Job GetJob();
         
+        // Worker difficulty
+        uint64 GetDifficulty()
+        {
+            return _diff;
+        }
+        void SetDifficulty(uint64 diff, bool resendJob = false)
+        {
+            _diff = diff;
+            
+            // Send difficulty update
+            JSON params;
+            params.Add(int64(_diff));
+            
+            JSON msg;
+            msg["id"];
+            msg["params"] = params;
+            msg["method"] = "mining.set_difficulty";
+            
+            SendMessage(msg);
+            
+            if (resendJob)
+                SendJob(false);
+        }
+        
+        // Client ID
+        uint64 GetID()
+        {
+            return _id;
+        }
+        
         void Disconnect()
         {
             _socket.close();
@@ -96,6 +135,8 @@ namespace Stratum
         // Networking
         asio::streambuf _recvBuffer;
         tcp::socket _socket;
+        uint32 _ip;
+        uint64 _id;
         
         // Pointer to server
         Stratum::Server* _server;
@@ -108,6 +149,11 @@ namespace Stratum
         uint32 _extranonce;
         std::map<uint64, Job> _jobs;
         uint32 _jobid;
+        
+        // Share limiting
+        uint64 _diff;
+        uint64 _minDiff;
+        ShareLimiter _shareLimiter;
     };
     
     typedef boost::shared_ptr<Client> ClientPtr;

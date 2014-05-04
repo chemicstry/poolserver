@@ -12,11 +12,12 @@
 class Server
 {
 public:
-    Server();
+    Server(asio::io_service& io);
     ~Server();
 
     Stratum::Server* stratumServer;
 
+    void UploadShares(const boost::system::error_code& e);
     boost::chrono::steady_clock::time_point diffStart;
     bool running;
     uint64_t serverLoops;
@@ -25,6 +26,9 @@ public:
     void Update(uint32_t);
     
     bool InitDatabase();
+    
+    boost::asio::deadline_timer uploadtimer;
+    asio::io_service& io_service;
 };
 
 #endif

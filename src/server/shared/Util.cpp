@@ -31,6 +31,26 @@ uint32 Util::Date(bool utc)
     return diff.total_seconds();
 }
 
+std::string Util::FS(const char *str, ...)
+{
+    va_list ap;
+    va_start(ap, str);
+
+    char text[MAX_FORMAT_LEN];
+    vsnprintf(text, MAX_FORMAT_LEN, str, ap);
+
+    va_end(ap);
+    
+    return std::string(text);
+}
+
+std::vector<std::string> Util::Explode(std::string input, std::string delim)
+{
+    std::vector<std::string> strs;
+    boost::split(strs, input, boost::is_any_of(delim));
+    return strs;
+}
+
 std::string Util::ToBase64(std::string input, bool linebreaks)
 {
     uint32_t writePaddChars = (3 - input.length() % 3) % 3;

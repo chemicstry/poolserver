@@ -69,7 +69,7 @@ public:
         size_t size = sizeof(T);
         
         if (vec.size() < pointer+size)
-            return NULL;
+            return 0;
         
         T data = 0;
         for (uint64 i = 0; i < size; ++i)

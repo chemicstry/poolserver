@@ -11,6 +11,7 @@ namespace Stratum
     class Job
     {
     public:
+        uint64 diff;
         Bitcoin::BlockPtr block;
         BinaryData coinbase1;
         BinaryData coinbase2;

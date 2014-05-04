@@ -26,15 +26,16 @@ bool InitConfig(int argc, char *argv[])
     
     // Generic
     descGeneric.add_options()
-        ("version,v", "print version string")
-        ("help,h", "produce help message")
-        ("config,c", boost::program_options::value<std::string>()->default_value("poolserver.cfg"),"name of a file of a configuration.")
+        ("version,v", "Print version string")
+        ("help,h", "Produce help message")
+        ("config,c", boost::program_options::value<std::string>()->default_value("../etc/poolserver.cfg"),"Path to configuration file")
     ;
     
     // Server
     descServer.add_options()
         ("MinDiffTime", boost::program_options::value<uint32_t>()->default_value(100), "Minimum server diff time")
         ("MiningAddress", boost::program_options::value<std::string>()->default_value("n1w8gkPXdNGb6edm4vujBn71A72eQFCNCw"), "Address to send coins to")
+        ("BitcoinRPC", boost::program_options::value<std::vector<std::string> >()->multitoken(), "Bitcoin RPC login credentials")
     ;
     
     // Stratum
@@ -42,13 +43,14 @@ bool InitConfig(int argc, char *argv[])
         ("StratumHost,sh", boost::program_options::value<std::string>()->default_value("0.0.0.0"), "Stratum server host")
         ("StratumPort,sp", boost::program_options::value<uint16_t>()->default_value(3333), "Stratum server port")
         ("StratumBlockCheckTime", boost::program_options::value<uint32>()->default_value(2000), "Time between block checks in ms")
+        ("StratumMinDifficulty", boost::program_options::value<uint32>()->default_value(1), "The difficulty on which a new miner starts")
     ;
     
     // Logging
     descLogging.add_options()
         ("LogConsoleLevel", boost::program_options::value<uint32_t>()->default_value(LOG_LEVEL_INFO), "Console log level (0-None, 1-Error, 2-Warn, 3-Info, 4-Debug)")
         ("LogConsoleDebugMask", boost::program_options::value<uint32_t>()->default_value(0), "Console log debug mask")
-        ("LogFilePath", boost::program_options::value<std::string>()->default_value("."), "File log path")
+        ("LogFilePath", boost::program_options::value<std::string>()->default_value("../etc"), "File log path")
         ("LogFileLevel", boost::program_options::value<uint32_t>()->default_value(LOG_LEVEL_WARN), "File log level (0-None, 1-Error, 2-Warn, 3-Info, 4-Debug)")
         ("LogFileDebugMask", boost::program_options::value<uint32_t>()->default_value(0), "File log debug mask")
     ;
@@ -88,6 +90,8 @@ bool InitConfig(int argc, char *argv[])
         return true;
     }
     
+    sLog.Info(LOG_GENERAL, "Using config file: %s", sConfig.Get<std::string>("config").c_str());
+    
     store(parse_config_file(ifs, fileOptions), sConfig.vm);
     notify(sConfig.vm);
     
@@ -102,7 +106,8 @@ int main(int argc, char *argv[])
     sLog.OpenLogFile(sConfig.Get<std::string>("LogFilePath"));
     sLog.Info(LOG_GENERAL, "LogFile Started: %s", sLog.logFileLoc.c_str());
     
-    Server* server = new Server();
+    boost::asio::io_service io;
+    Server* server = new Server(io);
     int exitcode = server->Run();
     delete server;
 

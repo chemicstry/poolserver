@@ -6,7 +6,9 @@
 #include <boost/cstdint.hpp>
 #include <boost/asio.hpp>
 #include <string>
+
 #include "JSON.h"
+#include "Exception.h"
 
 struct JSONRPCConnectionInfo
 {
@@ -15,6 +17,13 @@ struct JSONRPCConnectionInfo
     std::string User;
     std::string Pass;
     std::string B64Auth;
+};
+
+class JSONRPCException: public Exception
+{
+public:
+    JSONRPCException(const char *text): Exception(text) {}
+    JSONRPCException(std::string text): Exception(text) {}
 };
 
 class JSONRPC

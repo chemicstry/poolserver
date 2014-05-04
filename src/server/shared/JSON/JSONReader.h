@@ -176,7 +176,8 @@ namespace JSONReader
         std::string::const_iterator begin = str.begin();
         std::string::const_iterator end = str.end();
         
-        qi::phrase_parse(begin, end, g, ascii::space);
+        if (!qi::phrase_parse(begin, end, g, ascii::space))
+            throw JSONException("Failed to parse JSON");
     }
 }
 

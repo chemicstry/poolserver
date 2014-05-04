@@ -25,10 +25,10 @@ set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME     OFF)
 set(Boost_ALL_DYN_LINK           ON)
 
-SET(Boost_ADDITIONAL_VERSIONS "1.54" "1.54.0")
+SET(Boost_ADDITIONAL_VERSIONS "1.49" "1.49.0")
 
 # Boost
-find_package(Boost 1.54 COMPONENTS thread chrono program_options date_time REQUIRED)
+find_package(Boost 1.49 COMPONENTS thread chrono program_options date_time system REQUIRED)
 message(status "** Boost Include: ${Boost_INCLUDE_DIR}")
 message(status "** Boost Libraries: ${Boost_LIBRARY_DIRS}")
 message(status "** Boost Libraries: ${Boost_LIBRARIES}")

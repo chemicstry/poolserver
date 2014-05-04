@@ -2,6 +2,9 @@
 #define JSON_H_
 
 #include "Common.h"
+#include "Log.h"
+#include "Util.h"
+#include "Exception.h"
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/variant.hpp>
@@ -10,7 +13,6 @@
 #include <sstream>
 #include <vector>
 #include <map>
-#include <Log.h>
 
 enum JSONValueType
 {
@@ -24,6 +26,13 @@ enum JSONValueType
 };
 
 typedef boost::variant<bool, int64, double, std::string> JSONValue;
+
+class JSONException: public Exception
+{
+public:
+    JSONException(const char *text): Exception(text) {}
+    JSONException(std::string text): Exception(text) {}
+};
 
 class JSON
 {
@@ -41,6 +50,9 @@ public:
     // Arrays
     JSON& operator[] (uint32 index)
     {
+        if (index >= _vec.size())
+            throw JSONException(Util::FS("Index %u out of range. Vector size: %u", index, _vec.size()));
+        
         return _vec[index];
     }
     
@@ -49,7 +61,7 @@ public:
     {
         if (_type != JSON_ARRAY) {
             if (_type != JSON_NULL)
-                throw "Bad type";
+                throw JSONException("Node is not an array type");
             else
                 _type = JSON_ARRAY;
         }
@@ -63,7 +75,7 @@ public:
     {
         if (_type != JSON_ARRAY) {
             if (_type != JSON_NULL)
-                throw "Bad type";
+                throw JSONException("Node is not an array type");
             else
                 _type = JSON_ARRAY;
         }
@@ -77,7 +89,7 @@ public:
     {
         if (_type != JSON_OBJECT) {
             if (_type != JSON_NULL)
-                throw "Bad type";
+                throw JSONException("Node is not an object type");
             else
                 _type = JSON_OBJECT;
         }
@@ -95,7 +107,7 @@ public:
     {
         if (_type != JSON_OBJECT) {
             if (_type != JSON_NULL)
-                throw "Bad type";
+                throw JSONException("Node is not an object type");
             else
                 _type = JSON_OBJECT;
         }
@@ -112,7 +124,7 @@ public:
     bool GetBool()
     {
         if (_type != JSON_BOOL)
-            throw "Bad type";
+            throw JSONException("Node is not a bool type");
         
         return boost::get<bool>(_val);
     }
@@ -126,7 +138,7 @@ public:
     int64 GetInt()
     {
         if (_type != JSON_INTEGER)
-            throw "Bad type";
+            throw JSONException("Node is not an int type");
         
         return boost::get<int64>(_val);
     }
@@ -140,7 +152,7 @@ public:
     double GetDouble()
     {
         if (_type != JSON_DOUBLE)
-            throw "Bad type";
+            throw JSONException("Node is not a double type");
         
         return boost::get<double>(_val);
     }
@@ -154,7 +166,7 @@ public:
     std::string GetString()
     {
         if (_type != JSON_STRING)
-            throw "Bad type";
+            throw JSONException("Node is not a string type");
         
         return boost::get<std::string>(_val);
     }
@@ -188,7 +200,7 @@ public:
         else if (_type == JSON_OBJECT)
             return _map.size();
         else
-            throw "Type has no size";
+            return 0;
     }
     
     JSONValueType GetType()
@@ -227,7 +239,7 @@ inline void JSON::Add(JSON& node)
 {
     if (_type != JSON_ARRAY) {
         if (_type != JSON_NULL)
-            throw "Bad type";
+            throw JSONException("Node is not an array type");
         else
             _type = JSON_ARRAY;
     }

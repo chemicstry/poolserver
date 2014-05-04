@@ -14,11 +14,14 @@
 #include <boost/archive/iterators/transform_width.hpp>
 #include <boost/archive/iterators/insert_linebreaks.hpp>
 #include <boost/archive/iterators/remove_whitespace.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace Util
 {
     std::string Date(const char* format, bool utc = false);
     uint32 Date(bool utc = true);
+    std::string FS(const char *str, ...);
+    std::vector<std::string> Explode(std::string input, std::string delim);
     
     template <typename T>
     class SynchronisedQueue

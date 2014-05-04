@@ -30,10 +30,9 @@ bool JSONRPC::Connect(JSONRPCConnectionInfo connInfo)
         _sock.connect(_ep, error);
     }
     
-    if (error)
-    {
-        sLog.Error(LOG_JSONRPC, "JSONRPC::Connect(): Error connecting to '%s': %s", _connInfo.Host.c_str(), boost::system::system_error(error).what());
-        return false;
+    if (error) {
+        _sock.close();
+        throw JSONRPCException(Util::FS("JSONRPC::Connect(): Error connecting to '%s': %s", _connInfo.Host.c_str(), boost::system::system_error(error).what()));
     }
     
     _sock.close();
@@ -58,10 +57,9 @@ JSON JSONRPC::Query(std::string method, JSON params)
     _sock.close();
     _sock.connect(_ep, error);
     
-    if (error)
-    {
-        sLog.Error(LOG_JSONRPC, "JSONRPC::Query(): Error connecting to '%s': %s", _connInfo.Host.c_str(), boost::system::system_error(error).what());
-        throw "fail";
+    if (error) {
+        _sock.close();
+        throw JSONRPCException(Util::FS("JSONRPC::Connect(): Error connecting to '%s': %s", _connInfo.Host.c_str(), boost::system::system_error(error).what()));
     }
 
     boost::asio::streambuf request_buf;
@@ -88,16 +86,14 @@ JSON JSONRPC::Query(std::string method, JSON params)
     std::getline(response_stream, status_message);
 
     
-    if (!response_stream || http_version.substr(0, 5) != "HTTP/")
-    {
-        sLog.Error(LOG_JSONRPC, "JSONRPC::Query(): Malformed HTTP Response");
-        throw "fail";
+    if (!response_stream || http_version.substr(0, 5) != "HTTP/") {
+        _sock.close();
+        throw JSONRPCException("JSONRPC::Query(): Malformed HTTP Response");
     }
     
-    if (status_code != 200)
-    {
-        sLog.Error(LOG_JSONRPC, "JSONRPC::Query(): Returned status code: %u", status_code);
-        throw "fail";
+    if (status_code != 200) {
+        _sock.close();
+        throw JSONRPCException(Util::FS("JSONRPC::Query(): Returned status code: %u", status_code));
     }
     
     std::vector<std::string> headers;
@@ -115,13 +111,6 @@ JSON JSONRPC::Query(std::string method, JSON params)
         oss << &response;
         jsonresponse += oss.str();
     }
-    
-    // Read until EOF, writing data to output as we go.
-    /*while (_sock.available() && boost::asio::read(_sock, response, error)){
-        std::ostringstream oss;
-        oss << &response;
-        jsonresponse += oss.str();
-    }*/
     
     _sock.close();
     

@@ -72,9 +72,9 @@ StratumPort=3333
 #        Description: Location to save logfile to
 #        Important:   Do not add trailing slash
 #        Example:     "/var/log"
-#        Default:     "." - (Save log file next to executable)
+#        Default:     "../etc" - (Save log file next to executable)
 
-LogFilePath="."
+LogFilePath="../etc"
 
 #
 #    LogConsoleLevel
@@ -144,7 +144,7 @@ MySQLPort=3306
 #        Description: MySQL Server Username
 #        Default:     "" - (No Username)
 
-MySQLUser=""
+MySQLUser="root"
 
 #
 #    MySQLPass

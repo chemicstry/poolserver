@@ -1,6 +1,9 @@
 #include "Server.h"
 #include "Client.h"
 #include "BigNum.h"
+#include "DataMgr.h"
+#include "ShareLimiter.h"
+#include "Exception.h"
 #include <iostream>
 
 namespace Stratum
@@ -55,11 +58,23 @@ namespace Stratum
     {
         JSON params = msg["params"];
         
-        std::string username = params[0].GetString();
+        // Share limiter
+        if (!_shareLimiter.Submit()) {
+            JSON response;
+            response["id"] = msg["id"];
+            response["result"];
+            response["error"].Add(int64(20));
+            response["error"].Add("Blocked by share limiter");
+            response["error"].Add(JSON());
+            SendMessage(response);
+            return;
+        }
+        
         uint32 jobid;
         ByteBuffer jobbuf(Util::ASCIIToBin(params[1].GetString()));
         jobbuf >> jobid;
         
+        // Check if such job exists
         if (!_jobs.count(jobid)) {
             JSON response;
             response["id"] = msg["id"];
@@ -72,25 +87,47 @@ namespace Stratum
         }
         
         // check username
+        std::string username = params[0].GetString();
         
         BinaryData extranonce2 = Util::ASCIIToBin(params[2].GetString());
         if (extranonce2.size() != 4) {
             sLog.Error(LOG_SERVER, "Wrong extranonce size");
+            JSON response;
+            response["id"] = msg["id"];
+            response["result"];
+            response["error"].Add(int64(20));
+            response["error"].Add("Wrong extranonce size");
+            response["error"].Add(JSON());
+            SendMessage(response);
             return;
         }
         
         ByteBuffer timebuf(Util::Reverse(Util::ASCIIToBin(params[3].GetString())));
         if (timebuf.Size() != 4) {
             sLog.Error(LOG_SERVER, "Wrong ntime size");
+            JSON response;
+            response["id"] = msg["id"];
+            response["result"];
+            response["error"].Add(int64(20));
+            response["error"].Add("Wrong ntime size");
+            response["error"].Add(JSON());
+            SendMessage(response);
             return;
         }
         
         ByteBuffer noncebuf(Util::Reverse(Util::ASCIIToBin(params[4].GetString())));
         if (noncebuf.Size() != 4) {
             sLog.Error(LOG_SERVER, "Wrong nonce size");
+            JSON response;
+            response["id"] = msg["id"];
+            response["result"];
+            response["error"].Add(int64(20));
+            response["error"].Add("Wrong nonce size");
+            response["error"].Add(JSON());
+            SendMessage(response);
             return;
         }
-        
+    
         // Get job
         Job& job = _jobs[jobid];
         
@@ -98,6 +135,13 @@ namespace Stratum
         share << extranonce2 << timebuf << noncebuf;
         if (!job.SubmitShare(share.Binary())) {
             sLog.Error(LOG_SERVER, "Duplicate share");
+            JSON response;
+            response["id"] = msg["id"];
+            response["result"];
+            response["error"].Add(int64(22));
+            response["error"].Add("Duplicate share");
+            response["error"].Add(JSON());
+            SendMessage(response);
             return;
         }
         
@@ -140,12 +184,34 @@ namespace Stratum
         std::cout << "Criteria: " << criteria << std::endl;
         std::cout << "Diff: " << diff << std::endl;
         
+        // Check if difficulty meets job diff
+        if (target > Bitcoin::DiffToTarget(job.diff)) {
+            sLog.Error(LOG_SERVER, "Share above target");
+            JSON response;
+            response["id"] = msg["id"];
+            response["result"];
+            response["error"].Add(int64(23));
+            response["error"].Add("Share above target");
+            response["error"].Add(JSON());
+            SendMessage(response);
+            return;
+        }
+        
         // Check if block meets criteria
         if (target <= criteria) {
             sLog.Info(LOG_SERVER, "We have found a block candidate!");
             
             _server->SubmitBlock(block);
-        } 
+        } else {
+            sDataMgr.Push(Share(_ip, username, true, "", Util::Date(), job.diff));
+            
+            JSON response;
+            response["id"] = msg["id"];
+            response["result"] = true;
+            response["error"];
+            SendMessage(response);
+            return;
+        }
     }
     
     void Client::OnMiningSubscribe(JSON msg)
@@ -192,6 +258,7 @@ namespace Stratum
     {
         Job job;
         job.block = _server->GetWork();
+        job.diff = 1;
         
         // Serialize transaction
         ByteBuffer coinbasebuf;
@@ -219,6 +286,11 @@ namespace Stratum
             iss << is.rdbuf();
             sLog.Debug(LOG_SERVER, "Received: %s", iss.str().c_str());
             OnMessage(JSON::FromString(iss.str()));
+            /*try {
+                OnMessage(JSON::FromString(iss.str()));
+            } catch (uint64 e) {
+                sLog.Error(LOG_SERVER, "Exception caught while parsing json: %s", e.what());
+            }*/
             
             StartRead();
         } else {

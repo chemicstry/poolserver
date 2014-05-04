@@ -10,6 +10,7 @@
 #include "Bitcoin.h"
 #include "Util.h"
 #include "ByteBuffer.h"
+#include "NetworkMgr.h"
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
@@ -27,12 +28,22 @@ namespace Stratum
         uint16 Port;
     };
     
+    // Used for sorting std::set
+    struct ClientPtrCMP
+    {
+        bool operator() (const ClientPtr& a, const ClientPtr& b)
+        {
+            return a->GetID() < b->GetID();
+        }
+    };
+    
     class Server
     {
     public:
-        Server(asio::io_service& io_service) : _io_service(io_service), _acceptor(io_service), _blockCheckTimer(io_service), _blockHeight(0), _extranonce(0)
+        Server(asio::io_service& io_service) : _io_service(io_service), _acceptor(io_service), _extranonce(0), _clientId(0)
         {
-            _pubkey = Util::ASCIIToBin(sConfig.Get<std::string>("MiningAddress"));
+            // Subscribe for block updates
+            NetworkMgr::Instance()->BlockNotifyBind(boost::bind(&Server::BlockNotify, this, _1, _2));
         }
         
         ~Server()
@@ -44,11 +55,6 @@ namespace Stratum
         
         // Starts accepting connections
         void Start(tcp::endpoint endpoint);
-        
-        void SetBitcoinRPC(JSONRPC* bitcoinrpc)
-        {
-            _bitcoinrpc = bitcoinrpc;
-        }
         
         // Sends message to all clients
         void SendToAll(JSON msg);
@@ -62,12 +68,22 @@ namespace Stratum
         // Returns current work
         Bitcoin::BlockPtr GetWork()
         {
-            boost::lock_guard<boost::mutex> guard(_mtx_workupdate);
+            boost::lock_guard<boost::mutex> guard(_mtxCurrentWork);
             return _currentWork;
         }
         
+        // Block template update event
+        void BlockNotify(Bitcoin::BlockPtr block, bool newBlock)
+        {
+            sLog.Debug(LOG_SERVER, "Received block template update");
+            _mtxCurrentWork.lock();
+            _currentWork = block;
+            _mtxCurrentWork.unlock();
+            SendBlockTmpl(newBlock);
+        }
+        
         // Resets work for all clients
-        void ResetWork();
+        void SendBlockTmpl(bool resetWork);
         
         // Submits block to bitcoind
         bool SubmitBlock(Bitcoin::Block block);
@@ -82,7 +98,7 @@ namespace Stratum
     private:
         void _StartAccept()
         {
-            ClientPtr client = ClientPtr(new Client(this, _io_service));
+            ClientPtr client = ClientPtr(new Client(this, _io_service, _clientId++));
             
             _acceptor.async_accept(client->GetSocket(), boost::bind(&Server::_OnAccept, this, client, asio::placeholders::error));
         }
@@ -90,7 +106,7 @@ namespace Stratum
         void _OnAccept(ClientPtr client, const boost::system::error_code& error)
         {
             if (!error) {
-                sLog.Debug(LOG_STRATUM, "New stratum client accepted");
+                sLog.Debug(LOG_STRATUM, "New stratum client accepted. Total clients: %u", _clients.size());
                 client->Start();
                 _clients.insert(client);
             } else {
@@ -99,117 +115,19 @@ namespace Stratum
             
             _StartAccept();
         }
-        
-        void _UpdateWork(bool reset)
-        {
-            JSON response = _bitcoinrpc->Query("getblocktemplate");
-            
-            Bitcoin::BlockPtr block = Bitcoin::BlockPtr(new Bitcoin::Block());
-            
-            block->version = response["version"].GetInt();
-            block->prevBlockHash = Util::Reverse(Util::ASCIIToBin(response["previousblockhash"].GetString()));
-            block->time = response["curtime"].GetInt();
-            // Set bits
-            ByteBuffer bitbuf(Util::Reverse(Util::ASCIIToBin(response["bits"].GetString())));
-            bitbuf >> block->bits;
-            
-            // Add coinbase tx
-            block->tx.push_back(CreateCoinbaseTX(_blockHeight, _pubkey, response["coinbasevalue"].GetInt()));
-            
-            // Add other transactions
-            JSON trans = response["transactions"];
-            for (uint64 i = 0; i < trans.Size(); ++i) {
-                ByteBuffer txbuf(Util::ASCIIToBin(trans[i]["data"].GetString()));
-                Bitcoin::Transaction tx;
-                txbuf >> tx;
-                block->tx.push_back(tx);
-            }
-            
-            // Genrate merkle tree
-            block->BuildMerkleTree();
-            
-            // Set current work
-            _mtx_workupdate.lock();
-            _currentWork = block;
-            _mtx_workupdate.unlock();
-            
-            // Requests all clients to reset work
-            if (reset)
-                ResetWork();
-        }
-        
-        void _CheckBlocksTimer()
-        {
-            _CheckBlocks();
-            _blockCheckTimer.expires_from_now(boost::posix_time::milliseconds(sConfig.Get<uint32>("StratumBlockCheckTime")));
-            _blockCheckTimer.async_wait(boost::bind(&Server::_CheckBlocksTimer, this));
-        }
-        
-        void _CheckBlocks()
-        {
-            // Might be called twice from timer and when block is found
-            boost::lock_guard<boost::mutex> guard(_mtx_checkblock);
-            
-            sLog.Debug(LOG_STRATUM, "Clients: %u", _clients.size());
-            
-            JSON response = _bitcoinrpc->Query("getinfo");
-            uint32 curBlock = response["blocks"].GetInt();
-            
-            if (curBlock > _blockHeight) {
-                sLog.Debug(LOG_STRATUM, "New block on network! Height: %u", curBlock);
-                _blockHeight = curBlock;
-                _UpdateWork(true);
-            }
-        }
-        
-        Bitcoin::Transaction CreateCoinbaseTX(uint32 blockHeight, BinaryData pubkey, int64 value)
-        {
-            // Extranonce placeholder
-            BinaryData extranonce_ph(8, 0);
-            ByteBuffer scriptsig;
-            scriptsig << _blockHeight << extranonce_ph;
-            
-            Bitcoin::OutPoint outpoint;
-            outpoint.hash.resize(32, 0);
-            outpoint.n = 0xFFFFFFFF;
-            
-            Bitcoin::TxIn txin;
-            txin.prevout = outpoint;
-            txin.script = scriptsig.Binary();
-            txin.n = 0;
-            
-            Bitcoin::TxOut txout;
-            txout.value = value;
-            txout.scriptPubKey = Bitcoin::Script(pubkey) + Bitcoin::OP_CHECKSIG;
-            
-            Bitcoin::Transaction tx;
-            tx.version = 1;
-            tx.in.push_back(txin);
-            tx.out.push_back(txout);
-            tx.lockTime = 0;
-            
-            return tx;
-        }
+
     private:
         // Network
-        std::set<ClientPtr> _clients;
         asio::io_service& _io_service;
         tcp::acceptor _acceptor;
         
-        // Mutexes
-        boost::mutex _mtx_checkblock;
-        boost::mutex _mtx_workupdate;
-        
-        // RPC
-        JSONRPC* _bitcoinrpc;
-        
-        // Bitcoin info
-        BinaryData _pubkey;
-        asio::deadline_timer _blockCheckTimer;
-        uint32 _blockHeight;
+        // Clients
+        std::set<ClientPtr, ClientPtrCMP> _clients;
+        uint64 _clientId;
         
         // Work
         Bitcoin::BlockPtr _currentWork;
+        boost::mutex _mtxCurrentWork;
         uint32 _extranonce;
     };
 }
