@@ -98,7 +98,7 @@ namespace Stratum
         // Disconnects client
         void Disconnect(ClientPtr client)
         {
-            client->Disconnect();
+            client->CloseSocket();
             _clients.erase(client);
         }
         
