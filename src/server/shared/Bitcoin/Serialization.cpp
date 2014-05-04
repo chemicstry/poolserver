@@ -180,7 +180,7 @@ ByteBuffer& Bitcoin::operator>>(ByteBuffer& a, Block& b)
     for (uint64 i = 0; i < txcount; ++i)
         a >> b.tx[i];
     
-    a >> b.signature;
+    //a >> b.signature;
     
     return a;
 }

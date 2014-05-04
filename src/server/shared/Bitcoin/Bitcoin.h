@@ -54,7 +54,7 @@ namespace Bitcoin
         
         Transaction tx;
         tx.version = 1;
-        tx.time = Util:Date();
+        tx.time = Util::Date();
         tx.in.push_back(txin);
         tx.out.push_back(txout);
         tx.lockTime = 0;
