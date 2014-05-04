@@ -8,6 +8,8 @@ namespace Stratum
     // Returning false will stop any further share verifications (DoS prevention, etc)
     bool ShareLimiter::Submit()
     {
+        ++_totalShares;
+        
         uint64 curTime = Util::Date();
         uint64 sinceLast = curTime - _lastRetarget;
         
@@ -17,6 +19,10 @@ namespace Stratum
             return true;
         
         _lastRetarget = curTime;
+        
+        // Check if miner is ok
+        if (_totalShares > 20 && (double(_totalBadShares)/double(_totalShares)) > 0.8)
+            _client->Ban(60);
         
         while (_shares.size() && (_shares.front() < curTime - RETARGET_TIME_BUFFER))
             _shares.pop_front();

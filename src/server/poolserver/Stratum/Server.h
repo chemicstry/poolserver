@@ -16,6 +16,7 @@
 #include <boost/bind.hpp>
 #include <boost/thread/mutex.hpp>
 #include <set>
+#include <vector>
 
 using namespace boost;
 using namespace boost::asio::ip;
@@ -26,6 +27,12 @@ namespace Stratum
     {
         std::string Host;
         uint16 Port;
+    };
+    
+    struct BanInfo
+    {
+        uint32 ip;
+        uint64 timestamp;
     };
     
     // Used for sorting std::set
@@ -95,6 +102,26 @@ namespace Stratum
             _clients.erase(client);
         }
         
+        void Ban(uint32 ip, uint64 time)
+        {
+            BanInfo ban;
+            ban.ip = ip;
+            ban.timestamp = Util::Date() + time;
+            _bans.push_back(ban);
+        }
+        
+        bool IsBanned(uint32 ip)
+        {
+            for (int i = 0; i < _bans.size(); ++i) {
+                if (_bans[i].ip == ip) {
+                    if (_bans[i].timestamp > Util::Date())
+                        return true;
+                }
+            }
+            
+            return false;
+        }
+        
     private:
         void _StartAccept()
         {
@@ -123,6 +150,7 @@ namespace Stratum
         
         // Clients
         std::set<ClientPtr, ClientPtrCMP> _clients;
+        std::vector<BanInfo> _bans;
         uint64 _clientId;
         
         // Work

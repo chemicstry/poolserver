@@ -9,6 +9,22 @@
 
 namespace Stratum
 {
+    void Client::Start()
+    {
+        // Get IP
+        tcp::endpoint remote_ep = _socket.remote_endpoint();
+        address remote_ad = remote_ep.address();
+        _ip = remote_ad.to_v4().to_ulong();
+        
+        if (_server->IsBanned(_ip)) {
+            Disconnect();
+            return;
+        }
+        
+        // Start reading socket
+        StartRead();
+    }
+    
     void Client::SendJob(bool clean)
     {
         if (clean)
@@ -92,6 +108,7 @@ namespace Stratum
         // Check if such job exists
         if (!_jobs.count(jobid)) {
             DataMgr::Instance()->Push(Share(_ip, username, false, "Job not found", Util::Date(), 1));
+            _shareLimiter.LogBad();
             
             JSON response;
             response["id"] = msg["id"];
@@ -150,6 +167,7 @@ namespace Stratum
         if (!job.SubmitShare(share.Binary())) {
             sLog.Error(LOG_SERVER, "Duplicate share");
             DataMgr::Instance()->Push(Share(_ip, username, false, "Duplicate share", Util::Date(), job.diff));
+            _shareLimiter.LogBad();
             
             JSON response;
             response["id"] = msg["id"];
@@ -198,6 +216,7 @@ namespace Stratum
         if (target > Bitcoin::DiffToTarget(job.diff)) {
             sLog.Error(LOG_SERVER, "Share above target");
             DataMgr::Instance()->Push(Share(_ip, username, false, "Share above target", Util::Date(), job.diff));
+            _shareLimiter.LogBad();
             
             JSON response;
             response["id"] = msg["id"];
@@ -213,7 +232,11 @@ namespace Stratum
         if (target <= criteria) {
             sLog.Info(LOG_SERVER, "We have found a block candidate!");
             
-            _server->SubmitBlock(block);
+            if (_server->SubmitBlock(block)) {
+                std::string query("INSERT INTO `shares` (`rem_host`, `username`, `our_result`, `upstream_result`, `reason`, `solution`, `time`, `difficulty`) VALUES ");
+                query += Util::FS("(INET_NTOA(%u), '%s', 1, 1, '', '%s', FROM_UNIXTIME(%u), %u)", _ip, username.c_str(), Util::BinToASCII(hash).c_str(), Util::Date(), job.diff);
+                sDatabase.ExecuteAsync(query.c_str());
+            }
         } else {
             DataMgr::Instance()->Push(Share(_ip, username, true, "", Util::Date(), job.diff));
             
@@ -304,6 +327,17 @@ namespace Stratum
         return job;
     }
     
+    void Client::Ban(uint32 time)
+    {
+        _server->Ban(_ip, time);
+        Disconnect();
+    }
+    
+    void Client::Disconnect()
+    {
+        _server->Disconnect(shared_from_this());
+    }
+    
     void Client::_OnReceive(const boost::system::error_code& error, size_t bytes_transferred)
     {
         if (!error) {
@@ -334,7 +368,7 @@ namespace Stratum
         } else {
             // Client disconnected
             if ((error == asio::error::eof) || (error == asio::error::connection_reset)) {
-                _server->Disconnect(shared_from_this());
+                Disconnect();
             }
         }
     }

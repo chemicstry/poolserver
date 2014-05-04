@@ -38,16 +38,8 @@ namespace Stratum
             return _socket;
         }
         
-        void Start()
-        {
-            // Get IP
-            tcp::endpoint remote_ep = _socket.remote_endpoint();
-            address remote_ad = remote_ep.address();
-            _ip = remote_ad.to_v4().to_ulong();
-            
-            // Start reading socket
-            StartRead();
-        }
+        // Start client up!
+        void Start();
         
         void StartRead()
         {
@@ -124,7 +116,10 @@ namespace Stratum
             return _id;
         }
         
-        void Disconnect()
+        void Ban(uint32 time);
+        void Disconnect();
+        
+        void CloseSocket()
         {
             _socket.close();
         }
