@@ -27,7 +27,6 @@ public:
     
     bool InitDatabase();
     
-    boost::asio::deadline_timer uploadtimer;
     asio::io_service& io_service;
 };
 

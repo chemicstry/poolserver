@@ -18,14 +18,9 @@ std::string Util::Date(const char* format, bool utc)
     return ss.str();
 }
 
-uint32 Util::Date(bool utc)
+uint32 Util::Date()
 {
-    boost::posix_time::ptime now;
-    if (utc)
-        now = boost::posix_time::second_clock::universal_time();
-    else
-        now = boost::posix_time::second_clock::local_time();
-    
+    boost::posix_time::ptime now = boost::posix_time::second_clock::universal_time();
     boost::posix_time::ptime epoch(boost::gregorian::date(1970,1,1)); 
     boost::posix_time::time_duration diff = now - epoch;
     return diff.total_seconds();

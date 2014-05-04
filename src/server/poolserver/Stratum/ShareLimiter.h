@@ -6,29 +6,23 @@
 
 #include <deque>
 
-#define RETARGET_INTERVAL 60
+#define RETARGET_INTERVAL 20
 #define RETARGET_TIME_BUFFER 60*5
 #define RETARGET_SHARES_PER_MIN 15
 #define RETARGET_VARIANCE 40
+#define RETARGET_MAXDIFF 1000000
 
 namespace Stratum
 {
     class Client;
     
-    class ShareLimiterRecord
-    {
-    public:
-        ShareLimiterRecord(uint64 atime, uint64 adiff) : time(atime), diff(adiff) {}
-        uint64 time;
-        uint64 diff;
-    };
-    
     class ShareLimiter
     {
     public:
-        ShareLimiter(Client* client) : _client(client), _lastRetarget(0)
+        ShareLimiter(Client* client) : _client(client)
         {
             _startTime = Util::Date();
+            _lastRetarget = _startTime;
         }
         
         bool Submit();

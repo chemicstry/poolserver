@@ -13,6 +13,7 @@
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <set>
 
 #define MAX_PACKET 2048
 
@@ -142,7 +143,7 @@ namespace Stratum
         Stratum::Server* _server;
         
         // Authorization
-        std::vector<std::string> _workers;
+        std::set<std::string> _workers;
         
         // Jobs
         bool _subscribed;

@@ -1,6 +1,7 @@
 #include "ShareLimiter.h"
 #include "Server.h"
 #include "Client.h"
+#include "Log.h"
 
 namespace Stratum
 {
@@ -15,22 +16,32 @@ namespace Stratum
         if (sinceLast < RETARGET_INTERVAL)
             return true;
         
+        _lastRetarget = curTime;
+        
         while (_shares.size() && (_shares.front() < curTime - RETARGET_TIME_BUFFER))
             _shares.pop_front();
         
         uint32 interval = std::min(curTime - _startTime, uint64(RETARGET_TIME_BUFFER));
         
         // Calculate shares/min
-        double speed = (_shares.size()*60) / interval;
+        double speed = double(_shares.size()*60) / double(interval);
         
         // Calculate difference from pool target in %
-        double variance = (speed - RETARGET_SHARES_PER_MIN) / RETARGET_SHARES_PER_MIN;
+        double variance = speed / double(RETARGET_SHARES_PER_MIN);
+        
+        sLog.Info(LOG_SERVER, "Miner variance: %f speed: %f", variance, speed);
         
         // Check if we need to retarget
-        if (std::abs(variance)*100 < RETARGET_VARIANCE)
+        if (variance*100 < RETARGET_VARIANCE)
             return true;
         
         uint64 newDiff = double(_client->GetDifficulty()) * variance;
+        
+        if (newDiff < 1)
+            newDiff = 1;
+        
+        if (newDiff > RETARGET_MAXDIFF)
+            newDiff = RETARGET_MAXDIFF;
         
         _client->SetDifficulty(newDiff, true);
         

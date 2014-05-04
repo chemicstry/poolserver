@@ -3,6 +3,7 @@
 
 #include <deque>
 #include <boost/thread.hpp>
+#include <boost/asio.hpp>
 
 #include "Util.h"
 #include "Share.h"
@@ -10,19 +11,38 @@
 #define BULK_MIN 1
 #define BULK_COUNT 50
 
-template<class T>
+using namespace boost;
+
 class DataMgr
 {
+    // Singleton
+private:
+    static DataMgr* singleton;
 public:
-    DataMgr() {}
     
-    void Push(T data)
+    static DataMgr* Instance()
+    {
+        return singleton;
+    }
+    
+    static void Initialize(asio::io_service& io_service)
+    {
+        singleton = new DataMgr(io_service);
+    }
+    
+public:
+    DataMgr(asio::io_service& io_service) : _io_service(io_service), _uploadTimer(io_service)
+    {
+        UploadTimerStart();
+    }
+    
+    void Push(Share data)
     {
         boost::unique_lock<boost::mutex> lock(_datamutex);
         _datastore.push_back(data);
     }
     
-    T Pop()
+    Share Pop()
     {
         boost::unique_lock<boost::mutex> lock(_datamutex);
         Share share = _datastore.front();
@@ -36,12 +56,28 @@ public:
         return _datastore.size();
     }
     
+    void UploadTimerStart()
+    {
+        _uploadTimer.expires_from_now(boost::posix_time::seconds(3));
+        _uploadTimer.async_wait(boost::bind(&DataMgr::UploadTimerExpired, this, boost::asio::placeholders::error));
+    }
+
+    void UploadTimerExpired(const boost::system::error_code& /*e*/)
+    {
+        Upload();
+        UploadTimerStart();
+    }
+    
     void Upload();
 private:
+    // io service
+    asio::io_service& _io_service;
+    
+    // timer
+    boost::asio::deadline_timer _uploadTimer;
+    
     boost::mutex _datamutex;
-    std::deque<T> _datastore;
+    std::deque<Share> _datastore;
 };
-
-extern DataMgr<Share> sDataMgr;
 
 #endif

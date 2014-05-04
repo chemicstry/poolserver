@@ -82,6 +82,15 @@ namespace MySQL
             return _stmts[index];
         }
         
+        std::string Escape(std::string text)
+        {
+            char* buf = new char[text.length()*2 + 1];
+            mysql_real_escape_string(_mysql, buf, text.c_str(), text.length());
+            std::string result(buf);
+            delete buf;
+            return result;
+        }
+        
     private:
         bool _Query(const char *sql, MYSQL_RES** result, MYSQL_FIELD** fields, uint64& rowCount, uint32& fieldCount);
         bool _Query(PreparedStatement* stmt, MYSQL_RES** result, MYSQL_STMT** resultSTMT, uint32& fieldCount);

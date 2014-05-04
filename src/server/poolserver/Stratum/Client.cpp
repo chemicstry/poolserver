@@ -4,6 +4,7 @@
 #include "DataMgr.h"
 #include "ShareLimiter.h"
 #include "Exception.h"
+#include "ServerDatabaseEnv.h"
 #include <iostream>
 
 namespace Stratum
@@ -70,12 +71,28 @@ namespace Stratum
             return;
         }
         
+        // check username
+        std::string username = params[0].GetString();
+        if (!_workers.count(username)) {
+            sLog.Error(LOG_SERVER, "Worker not authenticated");
+            JSON response;
+            response["id"] = msg["id"];
+            response["result"];
+            response["error"].Add(int64(24));
+            response["error"].Add("Unauthorized worker");
+            response["error"].Add(JSON());
+            SendMessage(response);
+            return;
+        }
+        
         uint32 jobid;
         ByteBuffer jobbuf(Util::ASCIIToBin(params[1].GetString()));
         jobbuf >> jobid;
         
         // Check if such job exists
         if (!_jobs.count(jobid)) {
+            DataMgr::Instance()->Push(Share(_ip, username, false, "Job not found", Util::Date(), 1));
+            
             JSON response;
             response["id"] = msg["id"];
             response["result"];
@@ -85,9 +102,6 @@ namespace Stratum
             SendMessage(response);
             return;
         }
-        
-        // check username
-        std::string username = params[0].GetString();
         
         BinaryData extranonce2 = Util::ASCIIToBin(params[2].GetString());
         if (extranonce2.size() != 4) {
@@ -135,6 +149,8 @@ namespace Stratum
         share << extranonce2 << timebuf << noncebuf;
         if (!job.SubmitShare(share.Binary())) {
             sLog.Error(LOG_SERVER, "Duplicate share");
+            DataMgr::Instance()->Push(Share(_ip, username, false, "Duplicate share", Util::Date(), job.diff));
+            
             JSON response;
             response["id"] = msg["id"];
             response["result"];
@@ -161,17 +177,11 @@ namespace Stratum
         // Set coinbase tx
         block.tx[0] = coinbasetx;
         
-        sLog.Info(LOG_SERVER, "Coinbase hash1: %s", Util::BinToASCII(Crypto::SHA256D(coinbasebuf.Binary())).c_str());
-        sLog.Info(LOG_SERVER, "Coinbase hash2: %s", Util::BinToASCII(coinbasetx.GetHash()).c_str());
-        
         // Rebuilds only left side of merkle tree
         block.RebuildMerkleTree();
-        sLog.Info(LOG_SERVER, "Merklehash: %s", Util::BinToASCII(block.merkleRootHash).c_str());
         
         // Get block hash
         BinaryData hash = block.GetHash();
-        
-        sLog.Info(LOG_SERVER, "Block hash: %s", Util::BinToASCII(hash).c_str());
         
         // Get block target
         BigInt target(Util::BinToASCII(Util::Reverse(hash)), 16);
@@ -187,6 +197,8 @@ namespace Stratum
         // Check if difficulty meets job diff
         if (target > Bitcoin::DiffToTarget(job.diff)) {
             sLog.Error(LOG_SERVER, "Share above target");
+            DataMgr::Instance()->Push(Share(_ip, username, false, "Share above target", Util::Date(), job.diff));
+            
             JSON response;
             response["id"] = msg["id"];
             response["result"];
@@ -203,7 +215,7 @@ namespace Stratum
             
             _server->SubmitBlock(block);
         } else {
-            sDataMgr.Push(Share(_ip, username, true, "", Util::Date(), job.diff));
+            DataMgr::Instance()->Push(Share(_ip, username, true, "", Util::Date(), job.diff));
             
             JSON response;
             response["id"] = msg["id"];
@@ -247,11 +259,25 @@ namespace Stratum
         std::string username = msg["params"][0].GetString();
         std::string password = msg["params"][1].GetString();
         
-        JSON response;
-        response["id"] = msg["id"].GetInt();
-        response["error"];
-        response["result"] = true;
-        SendMessage(response);
+        MySQL::QueryResult result = sDatabase.Query(Util::FS("SELECT * FROM `pool_worker` WHERE `username` = '%s' and `password` = '%s'", sDatabase.Escape(username).c_str(), sDatabase.Escape(password).c_str()).c_str());
+        
+        if (result) {
+            _workers.insert(username);
+            
+            JSON response;
+            response["id"] = msg["id"].GetInt();
+            response["error"];
+            response["result"] = true;
+            SendMessage(response);
+        } else {
+            JSON response;
+            response["id"] = msg["id"].GetInt();
+            response["error"].Add(int64(20));
+            response["error"].Add("Authentication failed");
+            response["error"].Add(JSON());
+            response["result"] = true;
+            SendMessage(response);
+        }
     }
     
     Job Client::GetJob()

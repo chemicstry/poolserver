@@ -93,6 +93,14 @@ namespace MySQL
             return new PreparedStatement(stmtid);
         }
         
+        std::string Escape(std::string text)
+        {
+            DatabaseConnection* conn = GetSyncConnection();
+            std::string result = conn->Escape(text);
+            conn->Unlock();
+            return result;
+        }
+        
     private:
         DatabaseConnection* GetSyncConnection()
         {

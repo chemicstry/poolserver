@@ -19,7 +19,7 @@
 namespace Util
 {
     std::string Date(const char* format, bool utc = false);
-    uint32 Date(bool utc = true);
+    uint32 Date();
     std::string FS(const char *str, ...);
     std::vector<std::string> Explode(std::string input, std::string delim);
     

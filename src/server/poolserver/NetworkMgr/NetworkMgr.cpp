@@ -147,7 +147,7 @@ void NetworkMgr::BlockCheck()
 
 void NetworkMgr::BlockCheckTimerStart()
 {
-    _blockCheckTimer.expires_from_now(boost::posix_time::seconds(3));
+    _blockCheckTimer.expires_from_now(boost::posix_time::seconds(2));
     _blockCheckTimer.async_wait(boost::bind(&NetworkMgr::BlockCheckTimerExpired, this,  boost::asio::placeholders::error));
 }
 
@@ -161,12 +161,14 @@ void NetworkMgr::BlockCheckTimerExpired(const boost::system::error_code& /*e*/)
 void NetworkMgr::BlockNotifyBind(FBlockNotify f)
 {
     _blockNotifyBinds.push_back(f);
+    // Send block template
+    f(_curBlockTmpl, true);
 }
 
 // Block notify timer
 void NetworkMgr::BlockNotifyTimerStart()
 {
-    _blockNotifyTimer.expires_from_now(boost::posix_time::seconds(3));
+    _blockNotifyTimer.expires_from_now(boost::posix_time::seconds(30));
     _blockNotifyTimer.async_wait(boost::bind(&NetworkMgr::BlockNotifyTimerExpired, this,  boost::asio::placeholders::error));
 }
 

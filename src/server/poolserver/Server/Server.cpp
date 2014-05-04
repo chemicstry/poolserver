@@ -15,26 +15,13 @@
 #include <iostream>
 #include <algorithm>
 
-Server::Server(asio::io_service& io) : serverLoops(0), io_service(io), uploadtimer(io)
+Server::Server(asio::io_service& io) : serverLoops(0), io_service(io)
 {
 }
 
 Server::~Server()
 {
     //delete stratumServer;
-}
-
-void AsyncQueryCallback(MySQL::QueryResult result)
-{
-}
-
-
-
-void Server::UploadShares(const boost::system::error_code& /*e*/)
-{
-    sDataMgr.Upload();
-    uploadtimer.expires_from_now(boost::posix_time::seconds(3)); //repeat rate here
-    uploadtimer.async_wait(boost::bind(&Server::UploadShares, this, boost::asio::placeholders::error));
 }
 
 int Server::Run()
@@ -101,7 +88,7 @@ int Server::Run()
     sLog.Info(LOG_SERVER, "Trans: %s", Util::BinToASCII(buf2.vec).c_str());*/
     
     
-    
+    DataMgr::Initialize(io_service);
     NetworkMgr::Initialize(io_service);
     
     std::vector<std::string> btcrpc = sConfig.Get<std::vector<std::string> >("BitcoinRPC");
@@ -125,10 +112,6 @@ int Server::Run()
     // Start stratum server
     tcp::endpoint endpoint(tcp::v4(), sConfig.Get<uint16>("StratumPort"));
     srv.Start(endpoint);
-    
-    // Start timer
-    uploadtimer.expires_from_now(boost::posix_time::seconds(3)); //repeat rate here
-    uploadtimer.async_wait(boost::bind(&Server::UploadShares, this,  boost::asio::placeholders::error));
     
     io_service.run();
     
