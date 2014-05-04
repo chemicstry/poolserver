@@ -6,6 +6,7 @@
 #include "VarInt.h"
 #include "Script.h"
 #include "BigNum.h"
+#include "Util.h"
 #include <gmpxx.h>
 
 namespace Bitcoin
@@ -31,12 +32,12 @@ namespace Bitcoin
         return BigInt(bits & 0xFFFFFF) * BigInt(power);
     }
     
-    inline Transaction CreateCoinbaseTX(uint32 blockHeight, BinaryData pubkey, int64 value)
+    inline Transaction CreateCoinbaseTX(uint32 blockHeight, BinaryData pubkey, int64 value, BinaryData extras)
     {
         // Extranonce placeholder
         BinaryData extranonce_ph(8, 0);
         ByteBuffer scriptsig;
-        scriptsig << blockHeight << extranonce_ph;
+        scriptsig << blockHeight << extranonce_ph << extras;
         
         Bitcoin::OutPoint outpoint;
         outpoint.hash.resize(32, 0);
@@ -53,6 +54,7 @@ namespace Bitcoin
         
         Transaction tx;
         tx.version = 1;
+        tx.time = Util:Date();
         tx.in.push_back(txin);
         tx.out.push_back(txout);
         tx.lockTime = 0;

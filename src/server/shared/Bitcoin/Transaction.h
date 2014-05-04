@@ -47,6 +47,7 @@ namespace Bitcoin
     {
     public:
         uint32 version;
+        uint32 time;
         std::vector<TxIn> in;
         std::vector<TxOut> out;
         uint32 lockTime;

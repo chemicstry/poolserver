@@ -100,6 +100,7 @@ ByteBuffer& Bitcoin::operator>>(ByteBuffer& a, TxOut& b)
 ByteBuffer& Bitcoin::operator<<(ByteBuffer& a, Transaction& b)
 {
     a << b.version;
+    a << b.time;
     
     // Inputs
     VarInt insize(b.in.size());
@@ -120,6 +121,7 @@ ByteBuffer& Bitcoin::operator<<(ByteBuffer& a, Transaction& b)
 ByteBuffer& Bitcoin::operator>>(ByteBuffer& a, Transaction& b)
 {
     a >> b.version;
+    a >> b.time;
     
     // Inputs
     VarInt insize;
@@ -158,6 +160,8 @@ ByteBuffer& Bitcoin::operator<<(ByteBuffer& a, Block& b)
     for (uint64 i = 0; i < txcount; ++i)
         a << b.tx[i];
     
+    a << b.signature;
+    
     return a;
 }
 ByteBuffer& Bitcoin::operator>>(ByteBuffer& a, Block& b)
@@ -175,6 +179,8 @@ ByteBuffer& Bitcoin::operator>>(ByteBuffer& a, Block& b)
     b.tx.resize(txcount);
     for (uint64 i = 0; i < txcount; ++i)
         a >> b.tx[i];
+    
+    a >> b.signature;
     
     return a;
 }

@@ -18,6 +18,7 @@ namespace Bitcoin
         uint32 time;
         uint32 bits;
         uint32 nonce;
+        BinaryData signature;
     };
     
     class Block : public BlockHeader
