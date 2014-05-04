@@ -234,8 +234,15 @@ namespace Stratum
             
             if (_server->SubmitBlock(block)) {
                 std::string query("INSERT INTO `shares` (`rem_host`, `username`, `our_result`, `upstream_result`, `reason`, `solution`, `time`, `difficulty`) VALUES ");
-                query += Util::FS("(INET_NTOA(%u), '%s', 1, 1, '', '%s', FROM_UNIXTIME(%u), %u)", _ip, username.c_str(), Util::BinToASCII(hash).c_str(), Util::Date(), job.diff);
+                query += Util::FS("(INET_NTOA(%u), '%s', 1, 1, '', '%s', FROM_UNIXTIME(%u), %u)", _ip, username.c_str(), Util::BinToASCII(Util::Reverse(hash)).c_str(), Util::Date(), job.diff);
                 sDatabase.ExecuteAsync(query.c_str());
+                
+                JSON response;
+                response["id"] = msg["id"];
+                response["result"] = true;
+                response["error"];
+                SendMessage(response);
+                return;
             }
         } else {
             DataMgr::Instance()->Push(Share(_ip, username, true, "", Util::Date(), job.diff));
@@ -344,13 +351,12 @@ namespace Stratum
             std::istream is(&_recvBuffer);
             std::stringstream iss;
             iss << is.rdbuf();
-            sLog.Debug(LOG_SERVER, "Received: %s", iss.str().c_str());
-            OnMessage(JSON::FromString(iss.str()));
-            /*try {
+            
+            try {
                 OnMessage(JSON::FromString(iss.str()));
-            } catch (uint64 e) {
+            } catch (std::exception& e) {
                 sLog.Error(LOG_SERVER, "Exception caught while parsing json: %s", e.what());
-            }*/
+            }
             
             StartRead();
         } else {
