@@ -72,6 +72,8 @@ void NetworkMgr::UpdateBlockTemplate()
                 block->tx.push_back(tx);
             }
             
+            block->signature = BinaryData(72, 0);
+            
             // Genrate merkle tree
             block->BuildMerkleTree();
             

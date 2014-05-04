@@ -48,9 +48,14 @@ namespace Bitcoin
         txin.script = scriptsig.Binary();
         txin.n = 0;
         
+        ByteBuffer temp;
+        temp.Append<uint8>(pubkey.size());
+        temp << pubkey;
+        temp.Append<uint8>(Bitcoin::OP_CHECKSIG);
+        
         TxOut txout;
         txout.value = value;
-        txout.scriptPubKey = Bitcoin::Script(pubkey) + Bitcoin::OP_CHECKSIG;
+        txout.scriptPubKey = Bitcoin::Script(temp.Binary());
         
         Transaction tx;
         tx.version = 1;
