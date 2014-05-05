@@ -21,9 +21,9 @@ namespace MySQL
     void DatabaseQueryOperation::Execute()
     {
         if (_callback) {
-            ResultSet* result = _conn->Query(_query);
+            ResultSet* result = _conn->Query(_query.c_str());
             _callback(QueryResult(result));
         } else
-            _conn->Execute(_query);
+            _conn->Execute(_query.c_str());
     }
 }

@@ -22,6 +22,14 @@ namespace JSONReader
             _stack.push_back(&node);
         }
         
+        ~SemanticFunctions()
+        {
+            for (uint32 i = 0; i+1 < _stack.size(); ++i) {
+                delete _stack.back();
+                _stack.pop_back();
+            } 
+        }
+        
         void BeginObject(char ch)
         {
             if (_stack.back()->GetType() == JSON_NULL)

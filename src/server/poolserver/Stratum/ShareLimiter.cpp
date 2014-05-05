@@ -21,11 +21,14 @@ namespace Stratum
         _lastRetarget = curTime;
         
         // Check if miner is ok
-        if (_totalShares > 20 && (double(_totalBadShares)/double(_totalShares)) > 0.8)
+        if (_totalShares > 50 && (double(_totalBadShares)/double(_totalShares)) > 0.8)
             _client->Ban(60);
         
-        while (_shares.size() && (_shares.front() < curTime - RETARGET_TIME_BUFFER))
+        while (_shares.size()) {
+            if (_shares.front() > curTime - RETARGET_TIME_BUFFER)
+                break;
             _shares.pop_front();
+        }
         
         uint32 interval = std::min(curTime - _startTime, uint64(RETARGET_TIME_BUFFER));
         

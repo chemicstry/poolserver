@@ -40,22 +40,15 @@ namespace MySQL
     class DatabaseQueryOperation : public DatabaseOperation
     {
     public:
-        DatabaseQueryOperation(const char* query, DatabaseCallback callback = NULL): DatabaseOperation(), _callback(callback)
-        {
-            _query = new char[strlen(query)];
-            strcpy(_query, const_cast<char *>(query));
-        }
+        DatabaseQueryOperation(const char* query, DatabaseCallback callback = NULL): DatabaseOperation(), _callback(callback), _query(query) {}
         
-        ~DatabaseQueryOperation()
-        {
-            delete[] _query;
-        }
+        ~DatabaseQueryOperation() {}
         
         void Execute();
 
     private:
         DatabaseCallback _callback;
-        char* _query;
+        std::string _query;
     };
 
     typedef Util::SynchronisedQueue<DatabaseOperation*> DatabaseWorkQueue;
