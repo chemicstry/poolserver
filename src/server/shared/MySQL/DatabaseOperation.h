@@ -14,6 +14,7 @@ namespace MySQL
     {
     public:
         DatabaseOperation(): _conn(NULL) {}
+        virtual ~DatabaseOperation() {}
         virtual void Execute() = 0;
         void SetConnection(DatabaseConnection* conn) { _conn = conn; }
     protected:

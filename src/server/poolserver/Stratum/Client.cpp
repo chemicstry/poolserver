@@ -9,7 +9,7 @@
 
 namespace Stratum
 {
-    void Client::Start()
+    bool Client::Start()
     {
         // Get IP
         tcp::endpoint remote_ep = _socket.remote_endpoint();
@@ -19,11 +19,13 @@ namespace Stratum
         if (_server->IsBanned(_ip)) {
             sLog.Warn(LOG_STRATUM, "Blocked banned client from: %s", remote_ad.to_v4().to_string().c_str());
             Disconnect();
-            return;
+            return false;
         }
         
         // Start reading socket
         StartRead();
+        
+        return true;
     }
     
     void Client::SendJob(bool clean)
