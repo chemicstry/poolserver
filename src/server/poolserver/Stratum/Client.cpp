@@ -1,5 +1,6 @@
 #include "Server.h"
 #include "Client.h"
+#include "Config.h"
 #include "BigNum.h"
 #include "DataMgr.h"
 #include "ShareLimiter.h"
@@ -356,11 +357,21 @@ namespace Stratum
             char c;
             while (is.get(c)) {
                 if (c == '\n') {
+                    sLog.Debug(LOG_STRATUM, "Received message: %s", _recvMessage.c_str());
+                    
+                    // Redirect getwork
+                    if (!_subscribed) {
+                        if (_recvMessage.compare("POST / HTTP/1.1\r") == 0) {
+                            RedirectGetwork();
+                        }
+                    }
+                    
                     try {
                         OnMessage(JSON::FromString(_recvMessage));
                     } catch (std::exception& e) {
                         sLog.Error(LOG_SERVER, "Exception caught while parsing json: %s", e.what());
                     }
+                    
                     _recvMessage.clear();
                 } else
                     _recvMessage += c;

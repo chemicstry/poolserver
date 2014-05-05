@@ -133,6 +133,8 @@ namespace Stratum
         
         void _OnAccept(ClientPtr client, const boost::system::error_code& error)
         {
+            _StartAccept();
+            
             if (!error) {
                 if (client->Start()) {
                     _clients.insert(client);
@@ -141,8 +143,6 @@ namespace Stratum
             } else {
                 sLog.Debug(LOG_STRATUM, "Failed to accept stratum client");
             }
-            
-            _StartAccept();
         }
 
     private:

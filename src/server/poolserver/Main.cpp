@@ -43,7 +43,8 @@ bool InitConfig(int argc, char *argv[])
     
     // Stratum
     descStratum.add_options()
-        ("StratumHost,sh", boost::program_options::value<std::string>()->default_value("0.0.0.0"), "Stratum server host")
+        ("StratumHost,sh", boost::program_options::value<std::string>()->default_value("0.0.0.0"), "Bind IP for stratum")
+        ("StratumRedirectHost", boost::program_options::value<std::string>()->default_value("0.0.0.0"), "Where to redirect getwork requests")
         ("StratumPort,sp", boost::program_options::value<uint16_t>()->default_value(3333), "Stratum server port")
         ("StratumBlockCheckTime", boost::program_options::value<uint32>()->default_value(2000), "Time between block checks in ms")
         ("RetargetInterval", boost::program_options::value<uint32>()->default_value(20), "Time between difficulty checks in seconds")
