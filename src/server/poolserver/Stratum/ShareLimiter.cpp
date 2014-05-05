@@ -33,7 +33,7 @@ namespace Stratum
             _shares.pop_front();
         }
         
-        uint32 interval = std::min(curTime - _startTime, uint64(sConfig.Get<uint32>("RetargetTimeBuffer")));
+        uint32 interval = sConfig.Get<uint32>("RetargetTimeBuffer");
         
         // Calculate shares/min
         double speed = double(_shares.size()*60) / double(interval);
