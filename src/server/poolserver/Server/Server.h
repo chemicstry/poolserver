@@ -6,28 +6,30 @@
 #include <boost/thread.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/chrono.hpp>
+#include <boost/shared_ptr.hpp>
 
 #define SERVER_MIN_DIFF 100
 
 class Server
 {
 public:
-    Server(asio::io_service& io);
+    Server();
     ~Server();
-
-    Stratum::Server* stratumServer;
-
-    void UploadShares(const boost::system::error_code& e);
-    boost::chrono::steady_clock::time_point diffStart;
-    bool running;
-    uint64_t serverLoops;
-
-    int Run();
-    void Update(uint32_t);
     
+    int Run();
     bool InitDatabase();
     
-    asio::io_service& io_service;
+    void WorkerThread(boost::shared_ptr<asio::io_service> io_service);
+
+private:
+    // Protocol servers
+    Stratum::Server* _stratumServer;
+    
+    // Main io service
+    boost::shared_ptr<asio::io_service> _io_service;
+    
+    // Main thread group
+    boost::thread_group _workerThreads;
 };
 
 #endif
