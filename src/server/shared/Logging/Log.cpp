@@ -64,7 +64,7 @@ void Log::Debug(LogType type, const char * str, ...)
 
 void Log::OpenLogFile(std::string path)
 {
-    if (!logfile) {
+    if (!logfile.is_open()) {
         logFileLoc = path + "/server-" + Util::Date("%Y%m%d-%H%M%S") + ".log";
         logfile.open(logFileLoc.c_str());
     }
@@ -111,7 +111,7 @@ void Log::Write(LogLevel level, LogType type, std::string msg)
 
 void Log::AppendFile(std::string msg)
 {
-    if (!logfile)
+    if (!logfile.is_open())
         return;
     
     logfile << msg << std::endl;
