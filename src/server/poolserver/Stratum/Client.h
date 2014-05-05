@@ -27,7 +27,7 @@ namespace Stratum
     class Client : public boost::enable_shared_from_this<Client>
     {
     public:
-        Client(Server* server, asio::io_service& io_service, uint64 id) : _server(server), _socket(io_service), _id(id), _subscribed(false), _jobid(0), _shareLimiter(this)
+        Client(Server* server, asio::io_service& io_service, uint64 id) : _server(server), _socket(io_service), _ioStrand(io_service), _id(id), _subscribed(false), _jobid(0), _shareLimiter(this)
         {
             _diff = sConfig.Get<uint32>("StratumMinDifficulty");
             _minDiff = _diff;
@@ -49,7 +49,7 @@ namespace Stratum
                 _socket,
                 _recvBuffer,
                 asio::transfer_at_least(1),
-                boost::bind(&Client::_OnReceive, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
+                _ioStrand.wrap(boost::bind(&Client::_OnReceive, this, asio::placeholders::error, asio::placeholders::bytes_transferred)));
         }
         
         void SendJob(bool clean);
@@ -62,7 +62,7 @@ namespace Stratum
             boost::asio::async_write(
                 _socket,
                 boost::asio::buffer(data.c_str(), data.length()),
-                boost::bind(&Client::_OnSend, this, boost::asio::placeholders::error));
+                _ioStrand.wrap(boost::bind(&Client::_OnSend, this, boost::asio::placeholders::error)));
         }
         
         void OnMiningSubmit(JSON msg);
@@ -138,6 +138,7 @@ namespace Stratum
         asio::streambuf _recvBuffer;
         std::string _recvMessage;
         tcp::socket _socket;
+        asio::strand _ioStrand;
         uint32 _ip;
         uint64 _id;
         
