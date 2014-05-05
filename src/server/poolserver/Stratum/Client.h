@@ -15,7 +15,7 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <set>
 
-#define MAX_PACKET 2048
+#define PACKET_ALLOC 128
 
 using namespace boost;
 using namespace boost::asio::ip;
@@ -31,6 +31,7 @@ namespace Stratum
         {
             _diff = sConfig.Get<uint32>("StratumMinDifficulty");
             _minDiff = _diff;
+            _recvMessage.reserve(PACKET_ALLOC);
         }
         
         tcp::socket& GetSocket()
@@ -44,10 +45,10 @@ namespace Stratum
         void StartRead()
         {
             // Read until newline
-            boost::asio::async_read_until(
+            asio::async_read(
                 _socket,
                 _recvBuffer,
-                '\n',
+                asio::transfer_at_least(1),
                 boost::bind(&Client::_OnReceive, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
         }
         
@@ -116,6 +117,11 @@ namespace Stratum
             return _id;
         }
         
+        uint32 GetIP()
+        {
+            return _ip;
+        }
+        
         void Ban(uint32 time);
         void Disconnect();
         
@@ -130,6 +136,7 @@ namespace Stratum
     private:
         // Networking
         asio::streambuf _recvBuffer;
+        std::string _recvMessage;
         tcp::socket _socket;
         uint32 _ip;
         uint64 _id;

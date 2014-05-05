@@ -33,7 +33,7 @@ bool InitConfig(int argc, char *argv[])
     
     // Server
     descServer.add_options()
-        ("MinDiffTime", boost::program_options::value<uint32_t>()->default_value(100), "Minimum server diff time")
+        ("ServerThreads", boost::program_options::value<uint32_t>()->default_value(2), "How many threads to use")
         ("MiningAddress", boost::program_options::value<std::string>()->default_value("n1w8gkPXdNGb6edm4vujBn71A72eQFCNCw"), "Address to send coins to")
         ("BitcoinRPC", boost::program_options::value<std::vector<std::string> >()->multitoken(), "Bitcoin RPC login credentials")
     ;
@@ -106,8 +106,7 @@ int main(int argc, char *argv[])
     sLog.OpenLogFile(sConfig.Get<std::string>("LogFilePath"));
     sLog.Info(LOG_GENERAL, "LogFile Started: %s", sLog.logFileLoc.c_str());
     
-    boost::asio::io_service io;
-    Server* server = new Server(io);
+    Server* server = new Server();
     int exitcode = server->Run();
     delete server;
 

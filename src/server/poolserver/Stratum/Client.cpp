@@ -17,6 +17,7 @@ namespace Stratum
         _ip = remote_ad.to_v4().to_ulong();
         
         if (_server->IsBanned(_ip)) {
+            sLog.Warn(LOG_STRATUM, "Blocked banned client from: %s", remote_ad.to_v4().to_string().c_str());
             Disconnect();
             return;
         }
@@ -349,29 +350,32 @@ namespace Stratum
     {
         if (!error) {
             std::istream is(&_recvBuffer);
-            std::stringstream iss;
-            iss << is.rdbuf();
-            
-            try {
-                OnMessage(JSON::FromString(iss.str()));
-            } catch (std::exception& e) {
-                sLog.Error(LOG_SERVER, "Exception caught while parsing json: %s", e.what());
+            char c;
+            while (is.get(c)) {
+                if (c == '\n') {
+                    try {
+                        OnMessage(JSON::FromString(_recvMessage));
+                    } catch (std::exception& e) {
+                        sLog.Error(LOG_SERVER, "Exception caught while parsing json: %s", e.what());
+                    }
+                    _recvMessage.clear();
+                    _recvMessage.reserve(PACKET_ALLOC);
+                } else
+                    _recvMessage += c;
             }
             
             StartRead();
         } else {
             // Client disconnected
             if ((error == asio::error::eof) || (error == asio::error::connection_reset)) {
-                _server->Disconnect(shared_from_this());
+                Disconnect();
             }
         }
     }
     
     void Client::_OnSend(const boost::system::error_code& error)
     {
-        if (!error) {
-            // Party
-        } else {
+        if (error) {
             // Client disconnected
             if ((error == asio::error::eof) || (error == asio::error::connection_reset)) {
                 Disconnect();

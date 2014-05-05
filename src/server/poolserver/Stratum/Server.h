@@ -100,6 +100,7 @@ namespace Stratum
         {
             client->CloseSocket();
             _clients.erase(client);
+            sLog.Debug(LOG_STRATUM, "Stratum client disconnected from %s. Total clients: %u", asio::ip::address_v4(client->GetIP()).to_string().c_str(), _clients.size());
         }
         
         void Ban(uint32 ip, uint64 time)
@@ -133,9 +134,9 @@ namespace Stratum
         void _OnAccept(ClientPtr client, const boost::system::error_code& error)
         {
             if (!error) {
-                sLog.Debug(LOG_STRATUM, "New stratum client accepted. Total clients: %u", _clients.size());
                 client->Start();
                 _clients.insert(client);
+                sLog.Debug(LOG_STRATUM, "New stratum client accepted from %s. Total clients: %u", asio::ip::address_v4(client->GetIP()).to_string().c_str(), _clients.size());
             } else {
                 sLog.Debug(LOG_STRATUM, "Failed to accept stratum client");
             }
