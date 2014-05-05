@@ -6,12 +6,6 @@
 
 #include <deque>
 
-#define RETARGET_INTERVAL 20
-#define RETARGET_TIME_BUFFER 60*5
-#define RETARGET_SHARES_PER_MIN 15
-#define RETARGET_VARIANCE 40
-#define RETARGET_MAXDIFF 1000000
-
 namespace Stratum
 {
     class Client;

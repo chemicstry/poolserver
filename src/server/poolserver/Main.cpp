@@ -34,8 +34,11 @@ bool InitConfig(int argc, char *argv[])
     // Server
     descServer.add_options()
         ("ServerThreads", boost::program_options::value<uint32_t>()->default_value(2), "How many threads to use")
-        ("MiningAddress", boost::program_options::value<std::string>()->default_value("n1w8gkPXdNGb6edm4vujBn71A72eQFCNCw"), "Address to send coins to")
+        ("MiningAddress", boost::program_options::value<std::string>(), "Address to send coins to")
         ("BitcoinRPC", boost::program_options::value<std::vector<std::string> >()->multitoken(), "Bitcoin RPC login credentials")
+        ("ShareUploadMinCount", boost::program_options::value<uint32>()->default_value(2), "Minimum share count to upload to database")
+        ("ShareUploadBulkCount", boost::program_options::value<uint32>()->default_value(50), "How many shares to upload in one query")
+        ("ShareUploadInterval", boost::program_options::value<uint32>()->default_value(3), "How often to upload shares")
     ;
     
     // Stratum
@@ -43,7 +46,12 @@ bool InitConfig(int argc, char *argv[])
         ("StratumHost,sh", boost::program_options::value<std::string>()->default_value("0.0.0.0"), "Stratum server host")
         ("StratumPort,sp", boost::program_options::value<uint16_t>()->default_value(3333), "Stratum server port")
         ("StratumBlockCheckTime", boost::program_options::value<uint32>()->default_value(2000), "Time between block checks in ms")
-        ("StratumMinDifficulty", boost::program_options::value<uint32>()->default_value(1), "The difficulty on which a new miner starts")
+        ("RetargetInterval", boost::program_options::value<uint32>()->default_value(20), "Time between difficulty checks in seconds")
+        ("RetargetTimeBuffer", boost::program_options::value<uint32>()->default_value(60*5), "Buffer of shares to keep (in seconds)")
+        ("RetargetSharesPerMin", boost::program_options::value<uint32>()->default_value(15), "How many shares per min to target for")
+        ("RetargetVariance", boost::program_options::value<uint32>()->default_value(40), "Maximum allowed variance in percent before difficulty change")
+        ("RetargetMinDiff", boost::program_options::value<uint32>()->default_value(1), "Minimum difficulty (also starting difficulty)")
+        ("RetargetMaxDiff", boost::program_options::value<uint32>()->default_value(1000000), "Maximum difficulty we can reach")
     ;
     
     // Logging

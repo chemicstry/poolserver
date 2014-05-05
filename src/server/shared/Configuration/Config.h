@@ -5,6 +5,7 @@
 #include <cstring>
 #include <boost/program_options.hpp>
 #include <boost/cstdint.hpp>
+#include "Log.h"
 
 class Config
 {
@@ -16,7 +17,15 @@ public:
     template<class T>
     T Get(std::string key)
     {
-        return vm[key].as<T>();
+        T tmp;
+        
+        try {
+            tmp = vm[key].as<T>();
+        } catch(std::exception& e) {
+            sLog.Error(LOG_GENERAL, "Failed to get config value for key '%s'", key.c_str());
+        }
+        
+        return tmp;
     }
     
     // Containers

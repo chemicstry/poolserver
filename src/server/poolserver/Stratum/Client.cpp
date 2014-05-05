@@ -93,7 +93,7 @@ namespace Stratum
         // check username
         std::string username = params[0].GetString();
         if (!_workers.count(username)) {
-            sLog.Error(LOG_SERVER, "Worker not authenticated");
+            sLog.Error(LOG_STRATUM, "%s: Worker not authenticated", username.c_str());
             JSON response;
             response["id"] = msg["id"];
             response["result"];
@@ -125,7 +125,7 @@ namespace Stratum
         
         BinaryData extranonce2 = Util::ASCIIToBin(params[2].GetString());
         if (extranonce2.size() != 4) {
-            sLog.Error(LOG_SERVER, "Wrong extranonce size");
+            sLog.Error(LOG_STRATUM, "Wrong extranonce size");
             JSON response;
             response["id"] = msg["id"];
             response["result"];
@@ -138,7 +138,7 @@ namespace Stratum
         
         ByteBuffer timebuf(Util::Reverse(Util::ASCIIToBin(params[3].GetString())));
         if (timebuf.Size() != 4) {
-            sLog.Error(LOG_SERVER, "Wrong ntime size");
+            sLog.Error(LOG_STRATUM, "Wrong ntime size");
             JSON response;
             response["id"] = msg["id"];
             response["result"];
@@ -151,7 +151,7 @@ namespace Stratum
         
         ByteBuffer noncebuf(Util::Reverse(Util::ASCIIToBin(params[4].GetString())));
         if (noncebuf.Size() != 4) {
-            sLog.Error(LOG_SERVER, "Wrong nonce size");
+            sLog.Error(LOG_STRATUM, "Wrong nonce size");
             JSON response;
             response["id"] = msg["id"];
             response["result"];
@@ -168,7 +168,7 @@ namespace Stratum
         ByteBuffer share;
         share << extranonce2 << timebuf << noncebuf;
         if (!job.SubmitShare(share.Binary())) {
-            sLog.Error(LOG_SERVER, "Duplicate share");
+            sLog.Error(LOG_STRATUM, "%s: Duplicate share", username.c_str());
             DataMgr::Instance()->Push(Share(_ip, username, false, "Duplicate share", Util::Date(), job.diff));
             _shareLimiter.LogBad();
             
@@ -207,17 +207,9 @@ namespace Stratum
         // Get block target
         BigInt target(Util::BinToASCII(Util::Reverse(hash)), 16);
         
-        // Network target criteria
-        BigInt criteria(Bitcoin::TargetFromBits(block.bits));
-        
-        BigInt diff = Bitcoin::TargetToDiff(criteria);
-        std::cout << "Target: " << target << std::endl;
-        std::cout << "Criteria: " << criteria << std::endl;
-        std::cout << "Diff: " << diff << std::endl;
-        
         // Check if difficulty meets job diff
-        if (target > Bitcoin::DiffToTarget(job.diff)) {
-            sLog.Error(LOG_SERVER, "Share above target");
+        if (target > job.target) {
+            sLog.Error(LOG_STRATUM, "%s: Share above target", username.c_str());
             DataMgr::Instance()->Push(Share(_ip, username, false, "Share above target", Util::Date(), job.diff));
             _shareLimiter.LogBad();
             
@@ -232,7 +224,7 @@ namespace Stratum
         }
         
         // Check if block meets criteria
-        if (target <= criteria) {
+        if (target <= job.blockCriteria) {
             sLog.Info(LOG_SERVER, "We have found a block candidate!");
             
             if (_server->SubmitBlock(block)) {
@@ -292,10 +284,16 @@ namespace Stratum
         std::string username = msg["params"][0].GetString();
         std::string password = msg["params"][1].GetString();
         
-        MySQL::QueryResult result = sDatabase.Query(Util::FS("SELECT * FROM `pool_worker` WHERE `username` = '%s' and `password` = '%s'", sDatabase.Escape(username).c_str(), sDatabase.Escape(password).c_str()).c_str());
+        MySQL::QueryResult result = sDatabase.Query(Util::FS("SELECT `id`, `mindiff` FROM `pool_worker` WHERE `username` = '%s' and `password` = '%s'", sDatabase.Escape(username).c_str(), sDatabase.Escape(password).c_str()).c_str());
         
         if (result) {
             _workers.insert(username);
+            
+            MySQL::Field* fields = result->FetchRow();
+            _minDiff = fields[1].Get<uint32>();
+            
+            if (_diff < _minDiff)
+                SetDifficulty(_minDiff);
             
             JSON response;
             response["id"] = msg["id"].GetInt();
@@ -317,7 +315,8 @@ namespace Stratum
     {
         Job job;
         job.block = _server->GetWork();
-        job.diff = 1;
+        job.diff = _diff;
+        job.target = Bitcoin::DiffToTarget(job.diff);
         
         // Serialize transaction
         ByteBuffer coinbasebuf;
@@ -333,6 +332,8 @@ namespace Stratum
         uint32 cbsplit = 4 + 32 + 4 + 2 + 4;
         job.coinbase1 = BinaryData(coinbase.begin(), coinbase.begin() + cbsplit);
         job.coinbase2 = BinaryData(coinbase.begin() + cbsplit + 8, coinbase.end()); // plus extranonce size
+        
+        job.blockCriteria = Bitcoin::TargetFromBits(job.block->bits);
         
         return job;
     }

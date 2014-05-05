@@ -4,6 +4,7 @@
 #include "Bitcoin.h"
 #include "Crypto.h"
 #include "Util.h"
+#include "BigNum.h"
 #include <set>
 
 namespace Stratum
@@ -16,6 +17,8 @@ namespace Stratum
         BinaryData coinbase1;
         BinaryData coinbase2;
         std::set<std::string> shares;
+        BigInt blockCriteria;
+        BigInt target;
         
         // Submits share to a job
         // Returns false if the same share already exists
