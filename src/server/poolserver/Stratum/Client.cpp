@@ -17,6 +17,7 @@ namespace Stratum
         _ip = remote_ad.to_v4().to_ulong();
         
         if (_server->IsBanned(_ip)) {
+            sLog.Warn(LOG_STRATUM, "Blocked banned client from: %s", remote_ad.to_v4().to_string().c_str());
             Disconnect();
             return;
         }
@@ -349,10 +350,8 @@ namespace Stratum
     {
         if (!error) {
             std::istream is(&_recvBuffer);
-            
             char c;
-            while (is.good()) {
-                is >> c;
+            while (is.get(c)) {
                 if (c == '\n') {
                     try {
                         OnMessage(JSON::FromString(_recvMessage));

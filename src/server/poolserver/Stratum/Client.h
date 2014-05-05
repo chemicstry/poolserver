@@ -45,10 +45,10 @@ namespace Stratum
         void StartRead()
         {
             // Read until newline
-            boost::asio::async_read_until(
+            asio::async_read(
                 _socket,
                 _recvBuffer,
-                '\n',
+                asio::transfer_at_least(1),
                 boost::bind(&Client::_OnReceive, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
         }
         
@@ -115,6 +115,11 @@ namespace Stratum
         uint64 GetID()
         {
             return _id;
+        }
+        
+        uint32 GetIP()
+        {
+            return _ip;
         }
         
         void Ban(uint32 time);
