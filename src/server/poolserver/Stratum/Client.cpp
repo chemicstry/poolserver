@@ -270,7 +270,7 @@ namespace Stratum
         result.Add(int64(4));
         
         JSON response;
-        response["id"] = msg["id"].GetInt();
+        response["id"] = msg["id"];
         response["result"] = result;
         response["error"];
         
@@ -296,13 +296,13 @@ namespace Stratum
                 SetDifficulty(_minDiff);
             
             JSON response;
-            response["id"] = msg["id"].GetInt();
+            response["id"] = msg["id"];
             response["error"];
             response["result"] = true;
             SendMessage(response);
         } else {
             JSON response;
-            response["id"] = msg["id"].GetInt();
+            response["id"] = msg["id"];
             response["error"].Add(int64(20));
             response["error"].Add("Authentication failed");
             response["error"].Add(JSON());
