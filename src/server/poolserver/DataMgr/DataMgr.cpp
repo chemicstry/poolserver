@@ -9,12 +9,14 @@ void DataMgr::Upload()
 {
     sLog.Info(LOG_SERVER, "We have %u shares", Size());
     
-    while (Size() > BULK_MIN)
+    uint32 bulkCount = sConfig.Get<uint32>("ShareUploadBulkCount");
+    
+    while (Size() > sConfig.Get<uint32>("ShareUploadMinCount"))
     {
         sLog.Info(LOG_SERVER, "Uploading %u shares to database", Size());
         
         std::string query("INSERT INTO `shares` (`rem_host`, `username`, `our_result`, `upstream_result`, `reason`, `time`, `difficulty`) VALUES ");
-        for (int i = 0; i < BULK_COUNT; ++i)
+        for (int i = 0; i < bulkCount; ++i)
         {
             Share share = Pop();
             
@@ -23,7 +25,7 @@ void DataMgr::Upload()
             if (!Size())
                 break;
             
-            if (i != BULK_COUNT-1)
+            if (i != bulkCount-1)
                 query += ',';
         }
         

@@ -7,9 +7,7 @@
 
 #include "Util.h"
 #include "Share.h"
-
-#define BULK_MIN 1
-#define BULK_COUNT 50
+#include "Config.h"
 
 using namespace boost;
 
@@ -58,7 +56,7 @@ public:
     
     void UploadTimerStart()
     {
-        _uploadTimer.expires_from_now(boost::posix_time::seconds(3));
+        _uploadTimer.expires_from_now(boost::posix_time::seconds(sConfig.Get<uint32>("ShareUploadInterval")));
         _uploadTimer.async_wait(boost::bind(&DataMgr::UploadTimerExpired, this, boost::asio::placeholders::error));
     }
 

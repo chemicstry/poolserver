@@ -82,7 +82,7 @@ namespace Stratum
         // Block template update event
         void BlockNotify(Bitcoin::BlockPtr block, bool newBlock)
         {
-            sLog.Debug(LOG_SERVER, "Received block template update");
+            sLog.Debug(LOG_STRATUM, "Received block template update");
             _mtxCurrentWork.lock();
             _currentWork = block;
             _mtxCurrentWork.unlock();

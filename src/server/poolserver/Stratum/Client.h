@@ -27,8 +27,8 @@ namespace Stratum
     public:
         Client(Server* server, asio::io_service& io_service, uint64 id) : _io_service(io_service), _server(server), _socket(io_service), _ioStrand(io_service), _id(id), _subscribed(false), _jobid(0), _shareLimiter(this)
         {
-            _diff = sConfig.Get<uint32>("StratumMinDifficulty");
-            _minDiff = _diff;
+            _diff = sConfig.Get<uint32>("RetargetMinDiff");
+            _minDiff = sConfig.Get<uint32>("RetargetMinDiff");
         }
         
         ~Client()
@@ -98,6 +98,12 @@ namespace Stratum
         }
         void SetDifficulty(uint64 diff, bool resendJob = false)
         {
+            if (diff < _minDiff)
+                diff = _minDiff;
+            
+            if (diff == _diff)
+                return;
+            
             _diff = diff;
             
             // Send difficulty update

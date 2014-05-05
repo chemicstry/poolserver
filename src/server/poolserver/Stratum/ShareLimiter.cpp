@@ -1,6 +1,7 @@
 #include "ShareLimiter.h"
 #include "Server.h"
 #include "Client.h"
+#include "Config.h"
 #include "Log.h"
 
 namespace Stratum
@@ -15,42 +16,44 @@ namespace Stratum
         
         _shares.push_back(curTime);
         
-        if (sinceLast < RETARGET_INTERVAL)
+        if (sinceLast < sConfig.Get<uint32>("RetargetInterval"))
             return true;
         
         _lastRetarget = curTime;
         
         // Check if miner is ok
-        if (_totalShares > 50 && (double(_totalBadShares)/double(_totalShares)) > 0.8)
-            _client->Ban(60);
+        if (_totalShares > 50 && (double(_totalBadShares)/double(_totalShares)) > 0.8) {
+            _client->Ban(600);
+            return false;
+        }
         
         while (_shares.size()) {
-            if (_shares.front() > curTime - RETARGET_TIME_BUFFER)
+            if (_shares.front() > curTime - sConfig.Get<uint32>("RetargetTimeBuffer"))
                 break;
             _shares.pop_front();
         }
         
-        uint32 interval = std::min(curTime - _startTime, uint64(RETARGET_TIME_BUFFER));
+        uint32 interval = std::min(curTime - _startTime, uint64(sConfig.Get<uint32>("RetargetTimeBuffer")));
         
         // Calculate shares/min
         double speed = double(_shares.size()*60) / double(interval);
         
         // Calculate difference from pool target in %
-        double variance = speed / double(RETARGET_SHARES_PER_MIN);
+        double variance = speed / double(sConfig.Get<uint32>("RetargetSharesPerMin"));
         
-        sLog.Info(LOG_SERVER, "Miner variance: %f speed: %f", variance, speed);
+        sLog.Debug(LOG_STRATUM, "Miner variance: %f speed: %f", variance, speed);
         
         // Check if we need to retarget
-        if (variance*100 < RETARGET_VARIANCE)
+        if (variance*100 < sConfig.Get<uint32>("RetargetVariance"))
             return true;
         
         uint64 newDiff = double(_client->GetDifficulty()) * variance;
         
-        if (newDiff < 1)
-            newDiff = 1;
+        if (newDiff < sConfig.Get<uint32>("RetargetMinDiff"))
+            newDiff = sConfig.Get<uint32>("RetargetMinDiff");
         
-        if (newDiff > RETARGET_MAXDIFF)
-            newDiff = RETARGET_MAXDIFF;
+        if (newDiff > sConfig.Get<uint32>("RetargetMaxDiff"))
+            newDiff = sConfig.Get<uint32>("RetargetMaxDiff");
         
         _client->SetDifficulty(newDiff, true);
         
