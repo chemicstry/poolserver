@@ -56,6 +56,8 @@ namespace Stratum
         
         void SendMessage(JSON msg)
         {
+            boost::unique_lock<boost::mutex> lock(_mtxWrite);
+            
             std::string data = msg.ToString();
             data += '\n';
             sLog.Debug(LOG_SERVER, "Sending: %s", data.c_str());
@@ -139,6 +141,7 @@ namespace Stratum
         std::string _recvMessage;
         tcp::socket _socket;
         asio::strand _ioStrand;
+        boost::mutex _mtxWrite;
         uint32 _ip;
         uint64 _id;
         
