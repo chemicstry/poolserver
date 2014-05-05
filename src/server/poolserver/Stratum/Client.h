@@ -135,6 +135,17 @@ namespace Stratum
         void Ban(uint32 time);
         void Disconnect();
         
+        void RedirectGetwork()
+        {
+            sLog.Info(LOG_STRATUM, "Sending redirect to stratum for client %u", _ip);
+            std::string redirect(Util::FS("HTTP/1.1 200 OK\r\nX-Stratum: stratum+tcp://%s:%u\r\nConnection: Close\r\nContent-Length: 41\r\n\r\n{\"error\": null, \"result\": false, \"id\": 0}\n", sConfig.Get<std::string>("StratumRedirectHost").c_str(), sConfig.Get<uint16>("StratumPort")));
+            boost::asio::async_write(
+                _socket,
+                boost::asio::buffer(redirect.c_str(), redirect.length()),
+                _ioStrand.wrap(boost::bind(&Client::_OnSend, shared_from_this(), boost::asio::placeholders::error)));
+            Disconnect();
+        }
+        
         void CloseSocket()
         {
             boost::system::error_code ec;
