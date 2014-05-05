@@ -25,10 +25,15 @@ namespace Stratum
     class Client : public boost::enable_shared_from_this<Client>
     {
     public:
-        Client(Server* server, asio::io_service& io_service, uint64 id) : _server(server), _socket(io_service), _ioStrand(io_service), _id(id), _subscribed(false), _jobid(0), _shareLimiter(this)
+        Client(Server* server, asio::io_service& io_service, uint64 id) : _io_service(io_service), _server(server), _socket(io_service), _ioStrand(io_service), _id(id), _subscribed(false), _jobid(0), _shareLimiter(this)
         {
             _diff = sConfig.Get<uint32>("StratumMinDifficulty");
             _minDiff = _diff;
+        }
+        
+        ~Client()
+        {
+            sLog.Info(LOG_STRATUM, "%u: I'm going out! Cya!", _ip);
         }
         
         tcp::socket& GetSocket()
@@ -37,7 +42,7 @@ namespace Stratum
         }
         
         // Start client up!
-        void Start();
+        bool Start();
         
         void StartRead()
         {
@@ -46,7 +51,7 @@ namespace Stratum
                 _socket,
                 _recvBuffer,
                 asio::transfer_at_least(1),
-                _ioStrand.wrap(boost::bind(&Client::_OnReceive, this, asio::placeholders::error, asio::placeholders::bytes_transferred)));
+                _ioStrand.wrap(boost::bind(&Client::_OnReceive, shared_from_this(), asio::placeholders::error, asio::placeholders::bytes_transferred)));
         }
         
         void SendJob(bool clean);
@@ -61,7 +66,7 @@ namespace Stratum
             boost::asio::async_write(
                 _socket,
                 boost::asio::buffer(data.c_str(), data.length()),
-                _ioStrand.wrap(boost::bind(&Client::_OnSend, this, boost::asio::placeholders::error)));
+                _ioStrand.wrap(boost::bind(&Client::_OnSend, shared_from_this(), boost::asio::placeholders::error)));
         }
         
         void OnMiningSubmit(JSON msg);
@@ -126,13 +131,18 @@ namespace Stratum
         
         void CloseSocket()
         {
-            _socket.close();
+            boost::system::error_code ec;
+            _socket.shutdown(asio::ip::tcp::socket::shutdown_both, ec);
+            _socket.close(ec);
         }
     public:
         void _OnReceive(const boost::system::error_code& error, size_t bytes_transferred);
         void _OnSend(const boost::system::error_code& error);
         
     private:
+        // ASIO
+        asio::io_service& _io_service;
+        
         // Networking
         asio::streambuf _recvBuffer;
         std::string _recvMessage;
