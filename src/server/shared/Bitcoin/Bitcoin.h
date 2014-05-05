@@ -29,7 +29,9 @@ namespace Bitcoin
         mpz_t power;
         mpz_init(power);
         mpz_ui_pow_ui(power, 2, 8 * (nbytes - 3));
-        return BigInt(bits & 0xFFFFFF) * BigInt(power);
+        BigInt result = BigInt(bits & 0xFFFFFF) * BigInt(power);
+        mpz_clear(power);
+        return result;
     }
     
     inline Transaction CreateCoinbaseTX(uint32 blockHeight, BinaryData pubkey, int64 value, BinaryData extras)

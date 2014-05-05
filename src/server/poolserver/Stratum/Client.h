@@ -15,8 +15,6 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <set>
 
-#define PACKET_ALLOC 128
-
 using namespace boost;
 using namespace boost::asio::ip;
 
@@ -31,7 +29,6 @@ namespace Stratum
         {
             _diff = sConfig.Get<uint32>("StratumMinDifficulty");
             _minDiff = _diff;
-            _recvMessage.reserve(PACKET_ALLOC);
         }
         
         tcp::socket& GetSocket()

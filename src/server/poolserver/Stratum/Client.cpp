@@ -359,7 +359,6 @@ namespace Stratum
                         sLog.Error(LOG_SERVER, "Exception caught while parsing json: %s", e.what());
                     }
                     _recvMessage.clear();
-                    _recvMessage.reserve(PACKET_ALLOC);
                 } else
                     _recvMessage += c;
             }

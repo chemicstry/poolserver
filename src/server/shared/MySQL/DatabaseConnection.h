@@ -87,7 +87,7 @@ namespace MySQL
             char* buf = new char[text.length()*2 + 1];
             mysql_real_escape_string(_mysql, buf, text.c_str(), text.length());
             std::string result(buf);
-            delete buf;
+            delete[] buf;
             return result;
         }
         

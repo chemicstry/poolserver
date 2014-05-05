@@ -104,7 +104,7 @@ namespace MySQL
     private:
         DatabaseConnection* GetSyncConnection()
         {
-            uint32 i;
+            uint32 i = 0;
             uint8 conn_size = _connections[MYSQL_CONN_SYNC].size();
             DatabaseConnection* conn = NULL;
             
