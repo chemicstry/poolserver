@@ -15,7 +15,7 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <set>
 
-#define MAX_PACKET 2048
+#define PACKET_ALLOC 128
 
 using namespace boost;
 using namespace boost::asio::ip;
@@ -31,6 +31,7 @@ namespace Stratum
         {
             _diff = sConfig.Get<uint32>("StratumMinDifficulty");
             _minDiff = _diff;
+            _recvMessage.reserve(PACKET_ALLOC);
         }
         
         tcp::socket& GetSocket()
@@ -130,6 +131,7 @@ namespace Stratum
     private:
         // Networking
         asio::streambuf _recvBuffer;
+        std::string _recvMessage;
         tcp::socket _socket;
         uint32 _ip;
         uint64 _id;

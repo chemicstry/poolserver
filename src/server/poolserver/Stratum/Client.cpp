@@ -349,29 +349,34 @@ namespace Stratum
     {
         if (!error) {
             std::istream is(&_recvBuffer);
-            std::stringstream iss;
-            iss << is.rdbuf();
             
-            try {
-                OnMessage(JSON::FromString(iss.str()));
-            } catch (std::exception& e) {
-                sLog.Error(LOG_SERVER, "Exception caught while parsing json: %s", e.what());
+            char c;
+            while (is.good()) {
+                is >> c;
+                if (c == '\n') {
+                    try {
+                        OnMessage(JSON::FromString(_recvMessage));
+                    } catch (std::exception& e) {
+                        sLog.Error(LOG_SERVER, "Exception caught while parsing json: %s", e.what());
+                    }
+                    _recvMessage.clear();
+                    _recvMessage.reserve(PACKET_ALLOC);
+                } else
+                    _recvMessage += c;
             }
             
             StartRead();
         } else {
             // Client disconnected
             if ((error == asio::error::eof) || (error == asio::error::connection_reset)) {
-                _server->Disconnect(shared_from_this());
+                Disconnect();
             }
         }
     }
     
     void Client::_OnSend(const boost::system::error_code& error)
     {
-        if (!error) {
-            // Party
-        } else {
+        if (error) {
             // Client disconnected
             if ((error == asio::error::eof) || (error == asio::error::connection_reset)) {
                 Disconnect();
