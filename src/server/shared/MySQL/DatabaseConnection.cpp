@@ -26,7 +26,7 @@ namespace MySQL
 
     bool DatabaseConnection::Open()
     {
-        MYSQL* mysqlInit;
+        MYSQL* mysqlInit = NULL;
         mysqlInit = mysql_init(NULL);
         if (!mysqlInit)
             throw ConnectionException(Util::FS("Could not initialize Mysql connection to database `%s`", _connectionInfo.DB.c_str()));
@@ -50,8 +50,11 @@ namespace MySQL
         else
         {
             const char* error = mysql_error(mysqlInit);
+            _mysqlConnectError = mysql_errno(mysqlInit); // Used for DatabaseConnection::_HandleMySQLErrno
             mysql_close(mysqlInit);
-            throw ConnectionException(Util::FS("Could not connect to MySQL database at %s: %s", _connectionInfo.Host.c_str(), mysql_error(mysqlInit)));
+            mysqlInit = NULL;
+            
+            throw ConnectionException(Util::FS("Could not connect to MySQL database at %s: %s", _connectionInfo.Host.c_str(), error));
         }
     }
 
@@ -285,8 +288,31 @@ namespace MySQL
         return true;
     }
 
-    bool DatabaseConnection::_HandleMySQLErrno(uint32_t lErrno)
+    bool DatabaseConnection::_HandleMySQLErrno(uint32 lErrno)
     {
-        return false;
+        switch (lErrno)
+        {
+            case CR_SERVER_GONE_ERROR:
+            case CR_SERVER_LOST:
+            case CR_INVALID_CONN_HANDLE:
+            case CR_SERVER_LOST_EXTENDED:
+            {
+                mysql_close(_mysql);
+                
+                try {
+                    Open();
+                    return true;
+                } catch(std::exception& e) {
+                    sLog.Error(LOG_DATABASE, "Failed to connect to mysql database: %s", e.what());
+                    
+                    // It's possible this attempted reconnect throws 2006 at us. To prevent crazy recursive calls, sleep here.
+                    boost::this_thread::sleep(boost::posix_time::milliseconds(3000));
+                    return _HandleMySQLErrno(_mysqlConnectError);
+                }
+            }
+            default:
+                sLog.Error(LOG_DATABASE, "Unhandled MySQL errno %u. Unexpected behaviour possible.", lErrno);
+                return false;
+        }
     }
 }

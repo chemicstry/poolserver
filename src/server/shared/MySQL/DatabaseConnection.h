@@ -14,6 +14,14 @@
 
 namespace MySQL
 {
+    enum ClientError
+    {
+        CR_SERVER_GONE_ERROR        = 2006,
+        CR_SERVER_LOST              = 2013,
+        CR_INVALID_CONN_HANDLE      = 2048,
+        CR_SERVER_LOST_EXTENDED     = 2055
+    };
+    
     enum ConnectionType
     {
         MYSQL_CONN_SYNC,
@@ -99,6 +107,7 @@ namespace MySQL
         
         boost::mutex _mutex;
         MYSQL* _mysql;
+        uint32 _mysqlConnectError;
         DatabaseWorkQueue* _asyncQueue;
         DatabaseWorker* _worker;
         std::vector<ConnectionPreparedStatement*> _stmts;
