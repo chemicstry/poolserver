@@ -143,7 +143,6 @@ namespace Stratum
                 _socket,
                 boost::asio::buffer(redirect.c_str(), redirect.length()),
                 _ioStrand.wrap(boost::bind(&Client::_OnSend, shared_from_this(), boost::asio::placeholders::error)));
-            Disconnect();
         }
         
         void CloseSocket()
