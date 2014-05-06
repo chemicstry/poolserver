@@ -7,14 +7,14 @@
 namespace Stratum
 {
     // Returning false will stop any further share verifications (DoS prevention, etc)
-    bool ShareLimiter::Submit()
+    bool ShareLimiter::Submit(uint64 diff)
     {
         ++_totalShares;
         
         uint64 curTime = Util::Date();
         uint64 sinceLast = curTime - _lastRetarget;
         
-        _shares.push_back(curTime);
+        _shares.push_back(ShareLimiterRecord(diff, curTime));
         
         if (sinceLast < sConfig.Get<uint32>("RetargetInterval"))
             return true;
@@ -27,33 +27,39 @@ namespace Stratum
             return false;
         }
         
+        // Drop old shares
         while (_shares.size()) {
-            if (_shares.front() > curTime - sConfig.Get<uint32>("RetargetTimeBuffer"))
+            if (_shares.front().time > curTime - sConfig.Get<uint32>("RetargetTimeBuffer"))
                 break;
             _shares.pop_front();
         }
         
-        uint32 interval = sConfig.Get<uint32>("RetargetTimeBuffer");
+        double totalWeighted = 0;
+        for (uint32 i = 0; i < _shares.size(); ++i)
+            totalWeighted += _shares[i].diff;
         
-        // Calculate shares/min
-        double speed = double(_shares.size()*60) / double(interval);
+        double interval = std::min(curTime - _startTime, uint64(sConfig.Get<uint32>("RetargetTimeBuffer")));
         
-        // Calculate difference from pool target in %
-        double variance = speed / double(sConfig.Get<uint32>("RetargetSharesPerMin"));
+        // Calculate hashrate in MH/s
+        double hashrate = (MEGAHASHCONST*totalWeighted)/interval;
         
-        sLog.Debug(LOG_STRATUM, "Miner variance: %f speed: %f", variance, speed);
+        // Calculate new diff
+        uint64 newDiff = (hashrate * sConfig.Get<double>("RetargetTimePerShare")) / MEGAHASHCONST;
         
-        // Check if we need to retarget
-        if (variance*100 < sConfig.Get<uint32>("RetargetVariance"))
-            return true;
-        
-        uint64 newDiff = double(_client->GetDifficulty()) * variance;
-        
+        // Check Limits
         if (newDiff < sConfig.Get<uint32>("RetargetMinDiff"))
             newDiff = sConfig.Get<uint32>("RetargetMinDiff");
-        
         if (newDiff > sConfig.Get<uint32>("RetargetMaxDiff"))
             newDiff = sConfig.Get<uint32>("RetargetMaxDiff");
+        
+        // Calculate variance in %
+        uint32 variance = abs(((newDiff - _client->GetDifficulty()) * 100) / _client->GetDifficulty());
+        
+        sLog.Debug(LOG_STRATUM, "Miner new diff: %u Variance: %u%% Hashrate: %f MH/s", newDiff, variance, hashrate);
+        
+        // Check if we need to retarget
+        if (variance < sConfig.Get<uint32>("RetargetVariance"))
+            return true;
         
         _client->SetDifficulty(newDiff, true);
         

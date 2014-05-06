@@ -79,18 +79,6 @@ namespace Stratum
     {
         JSON params = msg["params"];
         
-        // Share limiter
-        if (!_shareLimiter.Submit()) {
-            JSON response;
-            response["id"] = msg["id"];
-            response["result"];
-            response["error"].Add(int64(20));
-            response["error"].Add("Blocked by share limiter");
-            response["error"].Add(JSON());
-            SendMessage(response);
-            return;
-        }
-        
         // check username
         std::string username = params[0].GetString();
         if (!_workers.count(username)) {
@@ -119,6 +107,21 @@ namespace Stratum
             response["result"];
             response["error"].Add(int64(21));
             response["error"].Add("Job not found");
+            response["error"].Add(JSON());
+            SendMessage(response);
+            return;
+        }
+        
+        // Get job
+        Job& job = _jobs[jobid];
+        
+        // Share limiter
+        if (!_shareLimiter.Submit(job.diff)) {
+            JSON response;
+            response["id"] = msg["id"];
+            response["result"];
+            response["error"].Add(int64(20));
+            response["error"].Add("Blocked by share limiter");
             response["error"].Add(JSON());
             SendMessage(response);
             return;
@@ -162,9 +165,6 @@ namespace Stratum
             SendMessage(response);
             return;
         }
-    
-        // Get job
-        Job& job = _jobs[jobid];
         
         ByteBuffer share;
         share << extranonce2 << timebuf << noncebuf;

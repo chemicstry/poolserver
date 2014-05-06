@@ -6,20 +6,31 @@
 
 #include <deque>
 
+// 2^32 * 10^-6
+#define MEGAHASHCONST 4294.967296
+
 namespace Stratum
 {
     class Client;
+    
+    struct ShareLimiterRecord
+    {
+        ShareLimiterRecord(uint64 adiff, uint64 atime) : diff(adiff), time(atime) {}
+        uint64 diff;
+        uint64 time;
+    };
     
     class ShareLimiter
     {
     public:
         ShareLimiter(Client* client) : _client(client), _totalShares(0), _totalBadShares(0)
         {
-            _startTime = Util::Date();
+            // Minus one to prevent crash when interval is zero
+            _startTime = Util::Date()-1;
             _lastRetarget = _startTime;
         }
         
-        bool Submit();
+        bool Submit(uint64 diff);
         
         void LogBad()
         {
@@ -27,7 +38,7 @@ namespace Stratum
         }
         
     private:
-        std::deque<uint64> _shares;
+        std::deque<ShareLimiterRecord> _shares;
         Client* _client;
         uint64 _lastRetarget;
         uint64 _startTime;
