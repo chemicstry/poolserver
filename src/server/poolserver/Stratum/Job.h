@@ -17,8 +17,8 @@ namespace Stratum
         BinaryData coinbase1;
         BinaryData coinbase2;
         std::set<uint64> shares;
-        BigInt blockCriteria;
-        BigInt target;
+        BigInt blockTarget;
+        BigInt jobTarget;
         
         // Submits share to a job
         // Returns false if the same share already exists
