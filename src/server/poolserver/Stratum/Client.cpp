@@ -166,9 +166,13 @@ namespace Stratum
             return;
         }
         
-        ByteBuffer share;
-        share << extranonce2 << timebuf << noncebuf;
-        if (!job.SubmitShare(share.Binary())) {
+        // Pack two 32bit ints into 64bit
+        ByteBuffer sharebuf;
+        sharebuf << noncebuf << extranonce2;
+        uint64 share;
+        sharebuf >> share;
+        sLog.Debug(LOG_STRATUM, "Job::SubmitShare: Nonce: %s, Extranonse: %s, Share: %u", Util::BinToASCII(noncebuf.Binary()).c_str(), Util::BinToASCII(extranonce2).c_str(), share);
+        if (!job.SubmitShare(share)) {
             sLog.Error(LOG_STRATUM, "%s: Duplicate share", username.c_str());
             DataMgr::Instance()->Push(Share(_ip, username, false, "Duplicate share", Util::Date(), job.diff));
             _shareLimiter.LogBad();
@@ -209,7 +213,7 @@ namespace Stratum
         BigInt target(Util::BinToASCII(Util::Reverse(hash)), 16);
         
         // Check if difficulty meets job diff
-        if (target > job.target) {
+        if (target > job.jobTarget) {
             sLog.Error(LOG_STRATUM, "%s: Share above target", username.c_str());
             DataMgr::Instance()->Push(Share(_ip, username, false, "Share above target", Util::Date(), job.diff));
             _shareLimiter.LogBad();
@@ -225,7 +229,7 @@ namespace Stratum
         }
         
         // Check if block meets criteria
-        if (target <= job.blockCriteria) {
+        if (target <= job.blockTarget) {
             sLog.Info(LOG_SERVER, "We have found a block candidate!");
             
             if (_server->SubmitBlock(block)) {
@@ -317,7 +321,8 @@ namespace Stratum
         Job job;
         job.block = _server->GetWork();
         job.diff = _diff;
-        job.target = Bitcoin::DiffToTarget(job.diff);
+        job.jobTarget = Bitcoin::DiffToTarget(job.diff);
+        job.blockTarget = Bitcoin::TargetFromBits(job.block->bits);
         
         // Serialize transaction
         ByteBuffer coinbasebuf;
@@ -333,8 +338,6 @@ namespace Stratum
         uint32 cbsplit = 4 + 32 + 4 + 2 + 4;
         job.coinbase1 = BinaryData(coinbase.begin(), coinbase.begin() + cbsplit);
         job.coinbase2 = BinaryData(coinbase.begin() + cbsplit + 8, coinbase.end()); // plus extranonce size
-        
-        job.blockCriteria = Bitcoin::TargetFromBits(job.block->bits);
         
         return job;
     }

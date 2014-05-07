@@ -16,18 +16,17 @@ namespace Stratum
         Bitcoin::BlockPtr block;
         BinaryData coinbase1;
         BinaryData coinbase2;
-        std::set<std::string> shares;
-        BigInt blockCriteria;
-        BigInt target;
+        std::set<uint64> shares;
+        BigInt blockTarget;
+        BigInt jobTarget;
         
         // Submits share to a job
         // Returns false if the same share already exists
-        bool SubmitShare(BinaryData share)
+        bool SubmitShare(uint64 share)
         {
-            std::string sharestr = Util::BinToASCII(Crypto::SHA256(share));
-            std::set<std::string>::iterator it = shares.find(sharestr);
+            std::set<uint64>::iterator it = shares.find(share);
             if (it == shares.end()) {
-                shares.insert(sharestr);
+                shares.insert(share);
                 return true;
             } else
                 return false;
