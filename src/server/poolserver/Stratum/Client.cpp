@@ -166,9 +166,13 @@ namespace Stratum
             return;
         }
         
-        ByteBuffer share;
-        share << extranonce2 << timebuf << noncebuf;
-        if (!job.SubmitShare(share.Binary())) {
+        // Pack two 32bit ints into 64bit
+        ByteBuffer sharebuf;
+        sharebuf << noncebuf << extranonce2;
+        uint64 share;
+        sharebuf >> share;
+        sLog.Debug(LOG_STRATUM, "Job::SubmitShare: Nonce: %s, Extranonse: %s, Share: %u", Util::BinToASCII(noncebuf.Binary()).c_str(), Util::BinToASCII(extranonce2).c_str(), share);
+        if (!job.SubmitShare(share)) {
             sLog.Error(LOG_STRATUM, "%s: Duplicate share", username.c_str());
             DataMgr::Instance()->Push(Share(_ip, username, false, "Duplicate share", Util::Date(), job.diff));
             _shareLimiter.LogBad();
