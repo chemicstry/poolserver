@@ -86,7 +86,7 @@ uint8 Util::ASCIIToHex(char ch)
 BinaryData Util::ASCIIToBin(std::string str)
 {
     BinaryData data;
-    data.resize(str.size()/2, 0);
+    data.resize((str.size()+1)/2, 0);
     for (uint64 i = 0; i < str.size(); ++i) {
         if (i%2)
             data[i/2] += ASCIIToHex(str[i]);

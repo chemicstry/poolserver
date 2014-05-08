@@ -39,6 +39,9 @@ namespace Stratum
         
         _jobs[jobid] = job;
         
+        std::stringstream jobss;
+        jobss << std::hex << jobid;
+        
         // Build merkle branch array
         JSON merkle_branch(JSON_ARRAY);
         uint64 branches = job.block->merkleBranches;
@@ -57,7 +60,7 @@ namespace Stratum
         prevhashfixed << prevhash[0] << prevhash[1] << prevhash[2] << prevhash[3] << prevhash[4] << prevhash[5] << prevhash[6] << prevhash[7];
         
         JSON params;
-        params.Add(Util::BinToASCII(ByteBuffer(jobid).Binary()));
+        params.Add(jobss.str());
         params.Add(Util::BinToASCII(prevhashfixed.Binary()));
         params.Add(Util::BinToASCII(job.coinbase1));
         params.Add(Util::BinToASCII(job.coinbase2));
@@ -94,8 +97,9 @@ namespace Stratum
         }
         
         uint32 jobid;
-        ByteBuffer jobbuf(Util::ASCIIToBin(params[1].GetString()));
-        jobbuf >> jobid;
+        std::stringstream jobss;
+        jobss << std::hex << params[1].GetString();
+        jobss >> jobid;
         
         // Check if such job exists
         if (!_jobs.count(jobid)) {
