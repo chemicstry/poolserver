@@ -5,10 +5,12 @@
 #include "JSON.h"
 
 #include <boost/spirit/include/qi.hpp>
+#include <boost/spirit/include/support_iso8859_1.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <string>
 
+namespace iso8859_1 = boost::spirit::iso8859_1;
 namespace qi = boost::spirit::qi;
 namespace ascii = boost::spirit::ascii;
 
@@ -130,7 +132,7 @@ namespace JSONReader
     qi::real_parser<double, strict_real_policies<double> > strict_double;
     
     template<typename Iterator>
-    struct Grammar : qi::grammar<Iterator, ascii::space_type>
+    struct Grammar : qi::grammar<Iterator, iso8859_1::space_type>
     {
         Grammar(SemanticFunctions& smfunc) : _smfunc(smfunc), Grammar::base_type(json)
         {
@@ -162,15 +164,15 @@ namespace JSONReader
             number = strict_double[NewDouble] | qi::long_long[NewInt];
         }
         
-        qi::rule<Iterator, ascii::space_type> json;
-        qi::rule<Iterator, ascii::space_type> object;
-        qi::rule<Iterator, ascii::space_type> members;
-        qi::rule<Iterator, ascii::space_type> pair;
-        qi::rule<Iterator, ascii::space_type> array;
-        qi::rule<Iterator, ascii::space_type> elements;
-        qi::rule<Iterator, ascii::space_type> value;
-        qi::rule<Iterator, std::string(), ascii::space_type> string;
-        qi::rule<Iterator, ascii::space_type> number;
+        qi::rule<Iterator, iso8859_1::space_type> json;
+        qi::rule<Iterator, iso8859_1::space_type> object;
+        qi::rule<Iterator, iso8859_1::space_type> members;
+        qi::rule<Iterator, iso8859_1::space_type> pair;
+        qi::rule<Iterator, iso8859_1::space_type> array;
+        qi::rule<Iterator, iso8859_1::space_type> elements;
+        qi::rule<Iterator, iso8859_1::space_type> value;
+        qi::rule<Iterator, std::string(), iso8859_1::space_type> string;
+        qi::rule<Iterator, iso8859_1::space_type> number;
         
         // Functions
         SemanticFunctions& _smfunc;
@@ -184,7 +186,7 @@ namespace JSONReader
         std::string::const_iterator begin = str.begin();
         std::string::const_iterator end = str.end();
         
-        if (!qi::phrase_parse(begin, end, g, ascii::space))
+        if (!qi::phrase_parse(begin, end, g, iso8859_1::space))
             throw JSONException("Failed to parse JSON");
     }
 }
