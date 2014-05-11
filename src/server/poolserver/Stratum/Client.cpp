@@ -90,7 +90,7 @@ namespace Stratum
         // check username
         std::string username = params[0].GetString();
         if (!_workers.count(username)) {
-            sLog.Error(LOG_STRATUM, "%s: Worker not authenticated", username.c_str());
+            sLog.Warn(LOG_STRATUM, "%s: Worker not authenticated", username.c_str());
             JSON response;
             response["id"] = msg["id"];
             response["result"];
@@ -138,7 +138,7 @@ namespace Stratum
         
         BinaryData extranonce2 = Util::ASCIIToBin(params[2].GetString());
         if (extranonce2.size() != 4) {
-            sLog.Error(LOG_STRATUM, "Wrong extranonce size");
+            sLog.Warn(LOG_STRATUM, "Wrong extranonce size");
             JSON response;
             response["id"] = msg["id"];
             response["result"];
@@ -151,7 +151,7 @@ namespace Stratum
         
         ByteBuffer timebuf(Util::Reverse(Util::ASCIIToBin(params[3].GetString())));
         if (timebuf.Size() != 4) {
-            sLog.Error(LOG_STRATUM, "Wrong ntime size");
+            sLog.Warn(LOG_STRATUM, "Wrong ntime size");
             JSON response;
             response["id"] = msg["id"];
             response["result"];
@@ -164,7 +164,7 @@ namespace Stratum
         
         ByteBuffer noncebuf(Util::Reverse(Util::ASCIIToBin(params[4].GetString())));
         if (noncebuf.Size() != 4) {
-            sLog.Error(LOG_STRATUM, "Wrong nonce size");
+            sLog.Warn(LOG_STRATUM, "Wrong nonce size");
             JSON response;
             response["id"] = msg["id"];
             response["result"];
@@ -180,9 +180,11 @@ namespace Stratum
         sharebuf << noncebuf << extranonce2;
         uint64 share;
         sharebuf >> share;
-        sLog.Debug(LOG_STRATUM, "Job::SubmitShare: Nonce: %s, Extranonse: %s, Share: %u", Util::BinToASCII(noncebuf.Binary()).c_str(), Util::BinToASCII(extranonce2).c_str(), share);
+        
+        sLog.Debug(LOG_STRATUM, "Job::SubmitShare: Nonce: %s, Extranonce: %s, Share: %u", Util::BinToASCII(noncebuf.Binary()).c_str(), Util::BinToASCII(extranonce2).c_str(), share);
+        
         if (!job.SubmitShare(share)) {
-            sLog.Error(LOG_STRATUM, "%s: Duplicate share", username.c_str());
+            sLog.Warn(LOG_STRATUM, "%s: Duplicate share", username.c_str());
             DataMgr::Instance()->Push(Share(_ip, username, false, "Duplicate share", Util::Date(), job.diff));
             _shareLimiter.LogBad();
             
@@ -223,7 +225,7 @@ namespace Stratum
         
         // Check if difficulty meets job diff
         if (target > job.jobTarget) {
-            sLog.Error(LOG_STRATUM, "%s: Share above target", username.c_str());
+            sLog.Warn(LOG_STRATUM, "%s: Share above target", username.c_str());
             DataMgr::Instance()->Push(Share(_ip, username, false, "Share above target", Util::Date(), job.diff));
             _shareLimiter.LogBad();
             
@@ -239,7 +241,7 @@ namespace Stratum
         
         // Check if block meets criteria
         if (target <= job.blockTarget) {
-            sLog.Info(LOG_SERVER, "We have found a block candidate!");
+            sLog.Info(LOG_STRATUM, "We have found a block candidate!");
             
             if (_server->SubmitBlock(block)) {
                 std::string query("INSERT INTO `shares` (`rem_host`, `username`, `our_result`, `upstream_result`, `reason`, `solution`, `time`, `difficulty`) VALUES ");
@@ -381,7 +383,7 @@ namespace Stratum
                     try {
                         OnMessage(JSON::FromString(_recvMessage));
                     } catch (std::exception& e) {
-                        sLog.Error(LOG_SERVER, "Exception caught while parsing json: %s", e.what());
+                        sLog.Debug(LOG_STRATUM, "Exception caught while parsing json: %s", e.what());
                     }
                     
                     _recvMessage.clear();
