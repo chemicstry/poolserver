@@ -22,7 +22,7 @@ namespace Stratum
         _lastRetarget = curTime;
         
         // Check if miner is ok
-        if (_totalShares > 50 && (double(_totalBadShares)/double(_totalShares)) > 0.8) {
+        if (_totalShares > 200 && (double(_totalBadShares)/double(_totalShares)) > 0.9) {
             _client->Ban(600);
             return false;
         }
