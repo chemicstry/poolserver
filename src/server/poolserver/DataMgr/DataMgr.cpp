@@ -7,14 +7,12 @@ DataMgr* DataMgr::singleton = 0;
 
 void DataMgr::Upload()
 {
-    sLog.Info(LOG_SERVER, "We have %u shares", Size());
+    sLog.Info(LOG_SERVER, "Uploading %u shares", Size());
     
     uint32 bulkCount = sConfig.Get<uint32>("ShareUploadBulkCount");
     
     while (Size() > sConfig.Get<uint32>("ShareUploadMinCount"))
     {
-        sLog.Info(LOG_SERVER, "Uploading %u shares to database", Size());
-        
         std::string query("INSERT INTO `shares` (`rem_host`, `username`, `our_result`, `upstream_result`, `reason`, `time`, `difficulty`) VALUES ");
         for (int i = 0; i < bulkCount; ++i)
         {

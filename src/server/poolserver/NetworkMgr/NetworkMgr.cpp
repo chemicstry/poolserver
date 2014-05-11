@@ -80,7 +80,7 @@ void NetworkMgr::UpdateBlockTemplate()
             // Set
             _curBlockTmpl = block;
             
-            sLog.Debug(LOG_SERVER, "Fetched block template from rpc #%u", i);
+            sLog.Info(LOG_SERVER, "Fetched block template from rpc #%u", i);
             
             // Break from loop
             break;

@@ -11,7 +11,7 @@ namespace Stratum
         
         _StartAccept();
         
-        sLog.Debug(LOG_STRATUM, "Stratum server started");
+        sLog.Info(LOG_STRATUM, "Stratum server started");
     }
     
     void Server::SendToAll(JSON msg)

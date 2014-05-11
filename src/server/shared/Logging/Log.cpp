@@ -74,36 +74,38 @@ void Log::Write(LogLevel level, LogType type, std::string msg)
 {
     boost::lock_guard<boost::mutex> lock(_mutex);
     
+    std::string timestamp = Util::Date("%b-%d %H:%M:%S");
+    
     switch(level)
     {
         case LOG_LEVEL_ERROR:
             if (sConfig.Get<uint32_t>("LogConsoleLevel") >= level)
-                std::cout << "[ERROR] " << msg << std::endl;
+                std::cout << timestamp << " [ERROR] " << msg << std::endl;
             if (sConfig.Get<uint32_t>("LogFileLevel") >= level)
-                AppendFile("[ERROR] " + msg);
+                AppendFile(timestamp + " [ERROR] " + msg);
             break;
         case LOG_LEVEL_WARN:
             if (sConfig.Get<uint32_t>("LogConsoleLevel") >= level)
-                std::cout << "[WARN] " << msg << std::endl;
+                std::cout << timestamp << " [WARN] " << msg << std::endl;
             if (sConfig.Get<uint32_t>("LogFileLevel") >= level)
-                AppendFile("[WARN] " + msg);
+                AppendFile(timestamp + " [WARN] " + msg);
             break;
         case LOG_LEVEL_INFO:
             if (sConfig.Get<uint32_t>("LogConsoleLevel") >= level)
-                std::cout << "[INFO] " << msg << std::endl;
+                std::cout << timestamp << " [INFO] " << msg << std::endl;
             if (sConfig.Get<uint32_t>("LogFileLevel") >= level)
-                AppendFile("[INFO] " + msg);
+                AppendFile(timestamp + " [INFO] " + msg);
             break;
         case LOG_LEVEL_DEBUG:
             if (sConfig.Get<uint32_t>("LogConsoleLevel") >= level) {
                 uint32_t debugmask = sConfig.Get<uint32_t>("LogConsoleDebugMask");
                 if (debugmask & uint32_t(pow(2, type)))
-                    std::cout << "[DEBUG] " << msg << std::endl;
+                    std::cout << timestamp << " [DEBUG] " << msg << std::endl;
             }
             if (sConfig.Get<uint32_t>("LogFileLevel") >= level) {
                 uint32_t debugmask = sConfig.Get<uint32_t>("LogFileDebugMask");
                 if (debugmask & uint32_t(pow(2, type)))
-                    AppendFile("[DEBUG] " + msg);
+                    AppendFile(timestamp + " [DEBUG] " + msg);
             }
             break;
     }
