@@ -12,21 +12,26 @@ namespace Stratum
 {
     bool Client::Start()
     {
-        // Get IP
-        tcp::endpoint remote_ep = _socket.remote_endpoint();
-        address remote_ad = remote_ep.address();
-        _ip = remote_ad.to_v4().to_ulong();
-        
-        if (_server->IsBanned(_ip)) {
-            sLog.Warn(LOG_STRATUM, "Blocked banned client from: %s", remote_ad.to_v4().to_string().c_str());
-            Disconnect();
-            return false;
-        }
-        
-        // Start reading socket
-        StartRead();
-        
-        return true;
+		try {
+			// Get IP
+			tcp::endpoint remote_ep = _socket.remote_endpoint();
+			address remote_ad = remote_ep.address();
+			_ip = remote_ad.to_v4().to_ulong();
+			
+			if (_server->IsBanned(_ip)) {
+				sLog.Warn(LOG_STRATUM, "Blocked banned client from: %s", remote_ad.to_v4().to_string().c_str());
+				Disconnect();
+				return false;
+			}
+			
+			// Start reading socket
+			StartRead();
+        } catch (std::exception& e) {
+			sLog.Error(LOG_SERVER, "Exception caught while accepting client: %s", e.what());
+			return false;
+		}
+		
+		return true;
     }
     
     void Client::SendJob(bool clean)
