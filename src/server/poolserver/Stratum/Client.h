@@ -85,7 +85,7 @@ namespace Stratum
             else if (method.compare("mining.authorize") == 0)
                 OnMiningAuthorize(msg);
             else
-                sLog.Error(LOG_SERVER, "Method '%s' not found.", method.c_str());
+                sLog.Debug(LOG_STRATUM, "Method '%s' not found.", method.c_str());
         }
         
         // Gets new job from the server
