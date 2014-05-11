@@ -18,6 +18,8 @@
 #include <set>
 #include <vector>
 
+#define MAX_PACKET 4096
+
 using namespace boost;
 using namespace boost::asio::ip;
 

@@ -388,6 +388,10 @@ namespace Stratum
                 } else
                     _recvMessage += c;
             }
+			
+			// Check if message doesn't exceed maximum packet size
+			if (_recvMessage.size() > MAX_PACKET)
+				Disconnect();
             
             StartRead();
         } else {
