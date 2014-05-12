@@ -18,6 +18,7 @@ namespace Bitcoin
         uint32 time;
         uint32 bits;
         uint32 nonce;
+        BinaryData signature;
     };
     
     class Block : public BlockHeader
@@ -28,7 +29,6 @@ namespace Bitcoin
         
         // Other data
         std::vector<BinaryData> merkleTree;
-        uint64 merkleBranches;
         
         void BuildMerkleTree();
         // Rebuilds only left side of merkle tree
