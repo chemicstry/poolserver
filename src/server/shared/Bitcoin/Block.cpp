@@ -1,4 +1,5 @@
 #include "Block.h"
+#include "Log.h"
 
 namespace Bitcoin
 {
@@ -6,28 +7,20 @@ namespace Bitcoin
     {
         merkleTree.clear();
         
-        uint64 branches = 1;
-        uint32 levels = 0;
-        while (branches < tx.size()) {
-            branches *= 2;
-            ++levels;
-        }
-        
-        // Used when sending merkle branches
-        merkleBranches = branches;
-        
         // Add transactions
-        for (uint64 i = 0; i < branches; ++i)
-            merkleTree.push_back(tx[std::min(i, tx.size()-1)].GetHash());
+        for (uint64 i = 0; i < tx.size(); ++i)
+            merkleTree.push_back(tx[i].GetHash());
         
-        uint32 merkleIndex = 0;
-        for (uint32 level = levels; level > 0; --level)
+        uint32 j = 0;
+        for (uint32 size = tx.size(); size > 1; size = (size+1)/2)
         {
-            // Decrease before calculating because bottom level is transactions
-            branches /= 2;
+            for (uint32 i = 0; i < size; i += 2)
+            {
+                uint32 i2 = std::min(i+1, size-1);
+                merkleTree.push_back(Crypto::SHA256D(Util::Join(merkleTree[j+i], merkleTree[j+i2])));
+            }
             
-            for (uint32 branch = 0; branch < branches; ++branch)
-                merkleTree.push_back(Crypto::SHA256D(Util::Join(merkleTree[merkleIndex++], merkleTree[merkleIndex++])));
+            j += size;
         }
         
         // Last hash is merkle root
@@ -39,12 +32,12 @@ namespace Bitcoin
         // Set coinbase tx hash
         merkleTree[0] = tx[0].GetHash();
 
-        uint64 branches = merkleBranches;
-        uint64 index = 0;
-        while (branches > 1) {
-            merkleTree[index+branches] = Crypto::SHA256D(Util::Join(merkleTree[index], merkleTree[index+1]));
-            index += branches;
-            branches /= 2;
+        // Only rebuild left side of the tree
+        uint32 j = 0;
+        for (uint32 size = tx.size(); size > 1; size = (size+1)/2)
+        {
+            merkleTree[size] = Crypto::SHA256D(Util::Join(merkleTree[j], merkleTree[j+1]));
+            j += size;
         }
         
         // Last hash is merkle root

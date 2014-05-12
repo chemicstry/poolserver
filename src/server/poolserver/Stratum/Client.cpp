@@ -49,12 +49,12 @@ namespace Stratum
         
         // Build merkle branch array
         JSON merkle_branch(JSON_ARRAY);
-        uint64 branches = job.block->merkleBranches;
-        uint64 index = 0;
-        while (branches > 1) {
-            merkle_branch.Add(Util::BinToASCII(job.block->merkleTree[index+1]));
-            index += branches;
-            branches /= 2;
+        
+        uint32 j = 0;
+        for (uint32 size = job.block->tx.size(); size > 1; size = (size+1)/2)
+        {
+            merkle_branch.Add(Util::BinToASCII(job.block->merkleTree[j+1]));
+            j += size;
         }
         
         // Reverse prev block hash every 4 bytes... Makes a lot of sense...

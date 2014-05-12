@@ -29,7 +29,6 @@ namespace Bitcoin
         
         // Other data
         std::vector<BinaryData> merkleTree;
-        uint64 merkleBranches;
         
         void BuildMerkleTree();
         // Rebuilds only left side of merkle tree
