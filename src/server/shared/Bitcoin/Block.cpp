@@ -1,5 +1,4 @@
 #include "Block.h"
-#include "Log.h"
 
 namespace Bitcoin
 {
@@ -36,7 +35,7 @@ namespace Bitcoin
         uint32 j = 0;
         for (uint32 size = tx.size(); size > 1; size = (size+1)/2)
         {
-            merkleTree[size] = Crypto::SHA256D(Util::Join(merkleTree[j], merkleTree[j+1]));
+            merkleTree[j+size] = Crypto::SHA256D(Util::Join(merkleTree[j], merkleTree[j+1]));
             j += size;
         }
         
