@@ -16,6 +16,7 @@ namespace Stratum
     
     void Server::SendToAll(JSON msg)
     {
+        boost::lock_guard<boost::mutex> guard(_mtxClients);
         std::set<ClientPtr>::iterator it;
         for (it = _clients.begin(); it != _clients.end(); ++it)
             _io_service.post(boost::bind(&Client::SendMessage, (*it), msg));
@@ -23,6 +24,7 @@ namespace Stratum
     
     void Server::SendBlockTmpl(bool resetWork)
     {
+        boost::lock_guard<boost::mutex> guard(_mtxClients);
         std::set<ClientPtr>::iterator it;
         for (it = _clients.begin(); it != _clients.end(); ++it)
             _io_service.post(boost::bind(&Client::SendJob, (*it), resetWork));
