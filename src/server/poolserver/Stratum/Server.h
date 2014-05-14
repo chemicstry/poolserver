@@ -71,6 +71,7 @@ namespace Stratum
         // Returns new extranonce
         uint32 GetExtranonce()
         {
+            boost::lock_guard<boost::mutex> guard(_mtxExtranonce);
             return _extranonce++;
         }
         
@@ -100,7 +101,10 @@ namespace Stratum
         // Disconnects client
         void Disconnect(ClientPtr client)
         {
+            _mtxClients.lock();
             _clients.erase(client);
+            _mtxClients.unlock();
+            
             client->CloseSocket();
             sLog.Info(LOG_STRATUM, "Stratum client disconnected from %s. Total clients: %u", asio::ip::address_v4(client->GetIP()).to_string().c_str(), _clients.size());
         }
@@ -110,11 +114,15 @@ namespace Stratum
             BanInfo ban;
             ban.ip = ip;
             ban.timestamp = Util::Date() + time;
+            
+            _mtxBans.lock();
             _bans.push_back(ban);
+            _mtxBans.unlock();
         }
         
         bool IsBanned(uint32 ip)
         {
+            boost::lock_guard<boost::mutex> guard(_mtxBans);
             for (int i = 0; i < _bans.size(); ++i) {
                 if (_bans[i].ip == ip) {
                     if (_bans[i].timestamp > Util::Date())
@@ -137,7 +145,10 @@ namespace Stratum
         {
             if (!error) {
                 if (client->Start()) {
+                    _mtxClients.lock();
                     _clients.insert(client);
+                    _mtxClients.unlock();
+                    
                     sLog.Info(LOG_STRATUM, "New stratum client accepted from %s. Total clients: %u", asio::ip::address_v4(client->GetIP()).to_string().c_str(), _clients.size());
                 }
             } else {
@@ -154,13 +165,18 @@ namespace Stratum
         
         // Clients
         std::set<ClientPtr, ClientPtrCMP> _clients;
-        std::vector<BanInfo> _bans;
+        boost::mutex _mtxClients;
         uint64 _clientId;
+        
+        // Bands
+        std::vector<BanInfo> _bans;
+        boost::mutex _mtxBans;
         
         // Work
         Bitcoin::BlockPtr _currentWork;
         boost::mutex _mtxCurrentWork;
         uint32 _extranonce;
+        boost::mutex _mtxExtranonce;
     };
 }
 

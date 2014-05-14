@@ -243,9 +243,12 @@ namespace Stratum
         if (target <= job.blockTarget) {
             sLog.Info(LOG_STRATUM, "We have found a block candidate!");
             
+            // copy job diff because job will be deleted after submiting share by block template update
+            uint64 jobDiff = job.diff;
+            
             if (_server->SubmitBlock(block)) {
                 std::string query("INSERT INTO `shares` (`rem_host`, `username`, `our_result`, `upstream_result`, `reason`, `solution`, `time`, `difficulty`) VALUES ");
-                query += Util::FS("(INET_NTOA(%u), '%s', 1, 1, '', '%s', FROM_UNIXTIME(%u), %u)", _ip, username.c_str(), Util::BinToASCII(Util::Reverse(hash)).c_str(), Util::Date(), job.diff);
+                query += Util::FS("(INET_NTOA(%u), '%s', 1, 1, '', '%s', FROM_UNIXTIME(%u), %u)", _ip, username.c_str(), Util::BinToASCII(Util::Reverse(hash)).c_str(), Util::Date(), jobDiff);
                 sDatabase.ExecuteAsync(query.c_str());
                 
                 JSON response;
