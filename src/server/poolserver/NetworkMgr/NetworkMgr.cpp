@@ -63,6 +63,9 @@ void NetworkMgr::UpdateBlockTemplate()
             BinaryData pubkey = Util::ASCIIToBin(sConfig.Get<std::string>("MiningAddress"));
             block->tx.push_back(Bitcoin::CreateCoinbaseTX(_blockHeight, pubkey, response["coinbasevalue"].GetInt(), Util::ASCIIToBin("D7PoolBeta")));
             
+            // Fix nTime for coinbase tx
+            block->tx[0].time = block->time;
+            
             // Add other transactions
             JSON trans = response["transactions"];
             for (uint64 tidx = 0; tidx < trans.Size(); ++tidx) {
