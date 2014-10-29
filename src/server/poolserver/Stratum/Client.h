@@ -27,12 +27,13 @@ namespace Stratum
     public:
         Client(Server* server, asio::io_service& io_service, uint64 id) : _io_service(io_service), _server(server), _socket(io_service), _ioStrand(io_service), _id(id), _subscribed(false), _jobid(0), _shareLimiter(this)
         {
-            _diff = sConfig.Get<uint32>("RetargetMinDiff");
+            _diff = sConfig.Get<uint32>("RetargetStartingDiff");
             _minDiff = sConfig.Get<uint32>("RetargetMinDiff");
         }
         
         ~Client()
         {
+            CleanJobs();
             sLog.Info(LOG_STRATUM, "%u: I'm going out! Cya!", _ip);
         }
         
@@ -89,7 +90,14 @@ namespace Stratum
         }
         
         // Gets new job from the server
-        Job GetJob();
+        Job* GetJob();
+        
+        void CleanJobs()
+        {
+            for (std::map<uint64, Job*>::iterator it = _jobs.begin(); it != _jobs.end(); ++it)
+                delete it->second;
+            _jobs.clear();
+        }
         
         // Worker difficulty
         uint64 GetDifficulty()
@@ -177,7 +185,7 @@ namespace Stratum
         // Jobs
         bool _subscribed;
         uint32 _extranonce;
-        std::map<uint64, Job> _jobs;
+        std::map<uint64, Job*> _jobs;
         uint32 _jobid;
         
         // Share limiting

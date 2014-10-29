@@ -25,9 +25,9 @@ namespace Stratum
     public:
         ShareLimiter(Client* client) : _client(client), _totalShares(0), _totalBadShares(0)
         {
-            // Minus one to prevent crash when interval is zero
-            _startTime = Util::Date()-1;
-            _lastRetarget = _startTime;
+            // Minus to prevent crash when interval is zero
+            _startTime = Util::Date()-10;
+            _lastRetargetTime = _startTime;
         }
         
         bool Submit(uint64 diff);
@@ -40,7 +40,8 @@ namespace Stratum
     private:
         std::deque<ShareLimiterRecord> _shares;
         Client* _client;
-        uint64 _lastRetarget;
+        uint64 _lastRetargetTime;
+        uint64 _lastRetargetShares;
         uint64 _startTime;
         
         uint64 _totalShares;

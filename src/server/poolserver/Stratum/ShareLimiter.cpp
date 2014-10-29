@@ -12,14 +12,16 @@ namespace Stratum
         ++_totalShares;
         
         uint64 curTime = Util::Date();
-        uint64 sinceLast = curTime - _lastRetarget;
+        uint64 timeSinceRetarget = curTime - _lastRetargetTime;
+        uint64 sharesSinceRetarget = _totalShares - _lastRetargetShares;
         
         _shares.push_back(ShareLimiterRecord(diff, curTime));
         
-        if (sinceLast < sConfig.Get<uint32>("RetargetInterval"))
+        if (timeSinceRetarget < sConfig.Get<uint32>("RetargetInterval") && sharesSinceRetarget < sConfig.Get<uint32>("RetargetSharesThreshold"))
             return true;
         
-        _lastRetarget = curTime;
+        _lastRetargetTime = curTime;
+        _lastRetargetShares = _totalShares;
         
         // Check if miner is ok
         if (_totalShares > 200 && (double(_totalBadShares)/double(_totalShares)) > 0.9) {
@@ -61,7 +63,13 @@ namespace Stratum
         if (variance < sConfig.Get<uint32>("RetargetVariance"))
             return true;
         
-        _client->SetDifficulty(newDiff, true);
+        // If variance is huge, reset difficulty with job discard (DoS prevention)
+        if (variance > 2000) {
+            _client->SetDifficulty(newDiff, false);
+            _client->SendJob(true);
+            return false;
+        } else
+            _client->SetDifficulty(newDiff, true);
         
         return true;
     }

@@ -6,6 +6,7 @@
 #include "Util.h"
 #include "BigNum.h"
 #include <set>
+#include <boost/thread.hpp>
 
 namespace Stratum
 {
@@ -24,6 +25,8 @@ namespace Stratum
         // Returns false if the same share already exists
         bool SubmitShare(uint64 share)
         {
+            boost::unique_lock<boost::mutex> guard(_mtx);
+            
             std::set<uint64>::iterator it = shares.find(share);
             if (it == shares.end()) {
                 shares.insert(share);
@@ -31,6 +34,9 @@ namespace Stratum
             } else
                 return false;
         }
+        
+    private:
+        boost::mutex _mtx;
     };
 }
 

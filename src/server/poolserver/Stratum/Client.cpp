@@ -37,9 +37,9 @@ namespace Stratum
     void Client::SendJob(bool clean)
     {
         if (clean)
-            _jobs.clear();
+            CleanJobs();
         
-        Job job = GetJob();
+        Job* job = GetJob();
         uint32 jobid = _jobid++;
         
         _jobs[jobid] = job;
@@ -51,14 +51,14 @@ namespace Stratum
         JSON merkle_branch(JSON_ARRAY);
         
         uint32 j = 0;
-        for (uint32 size = job.block->tx.size(); size > 1; size = (size+1)/2)
+        for (uint32 size = job->block->tx.size(); size > 1; size = (size+1)/2)
         {
-            merkle_branch.Add(Util::BinToASCII(job.block->merkleTree[j+1]));
+            merkle_branch.Add(Util::BinToASCII(job->block->merkleTree[j+1]));
             j += size;
         }
         
         // Reverse prev block hash every 4 bytes... Makes a lot of sense...
-        ByteBuffer prevhashbuf(Util::Reverse(job.block->prevBlockHash));
+        ByteBuffer prevhashbuf(Util::Reverse(job->block->prevBlockHash));
         std::vector<uint32> prevhash(8);
         prevhashbuf >> prevhash[7] >> prevhash[6] >> prevhash[5] >> prevhash[4] >> prevhash[3] >> prevhash[2] >> prevhash[1] >> prevhash[0];
         ByteBuffer prevhashfixed;
@@ -67,12 +67,12 @@ namespace Stratum
         JSON params;
         params.Add(jobss.str());
         params.Add(Util::BinToASCII(prevhashfixed.Binary()));
-        params.Add(Util::BinToASCII(job.coinbase1));
-        params.Add(Util::BinToASCII(job.coinbase2));
+        params.Add(Util::BinToASCII(job->coinbase1));
+        params.Add(Util::BinToASCII(job->coinbase2));
         params.Add(merkle_branch);
-        params.Add(Util::BinToASCII(Util::Reverse(ByteBuffer(job.block->version).Binary())));
-        params.Add(Util::BinToASCII(Util::Reverse(ByteBuffer(job.block->bits).Binary())));
-        params.Add(Util::BinToASCII(Util::Reverse(ByteBuffer(job.block->time).Binary())));
+        params.Add(Util::BinToASCII(Util::Reverse(ByteBuffer(job->block->version).Binary())));
+        params.Add(Util::BinToASCII(Util::Reverse(ByteBuffer(job->block->bits).Binary())));
+        params.Add(Util::BinToASCII(Util::Reverse(ByteBuffer(job->block->time).Binary())));
         params.Add(clean);
         
         JSON msg;
@@ -122,10 +122,10 @@ namespace Stratum
         }
         
         // Get job
-        Job& job = _jobs[jobid];
+        Job* job = _jobs[jobid];
         
         // Share limiter
-        if (!_shareLimiter.Submit(job.diff)) {
+        if (!_shareLimiter.Submit(job->diff)) {
             JSON response;
             response["id"] = msg["id"];
             response["result"];
@@ -183,9 +183,9 @@ namespace Stratum
         
         sLog.Debug(LOG_STRATUM, "Job::SubmitShare: Nonce: %s, Extranonce: %s, Share: %u", Util::BinToASCII(noncebuf.Binary()).c_str(), Util::BinToASCII(extranonce2).c_str(), share);
         
-        if (!job.SubmitShare(share)) {
+        if (!job->SubmitShare(share)) {
             sLog.Warn(LOG_STRATUM, "%s: Duplicate share", username.c_str());
-            DataMgr::Instance()->Push(Share(_ip, username, false, "Duplicate share", Util::Date(), job.diff));
+            DataMgr::Instance()->Push(Share(_ip, username, false, "Duplicate share", Util::Date(), job->diff));
             _shareLimiter.LogBad();
             
             JSON response;
@@ -199,7 +199,7 @@ namespace Stratum
         }
         
         // Copy block we are working on
-        Bitcoin::Block block = *job.block;
+        Bitcoin::Block block = *job->block;
         
         // Start assembling the block
         timebuf >> block.time;
@@ -208,7 +208,7 @@ namespace Stratum
         // Assemble coinbase
         Bitcoin::Transaction coinbasetx;
         ByteBuffer coinbasebuf;
-        coinbasebuf << job.coinbase1 << _extranonce << extranonce2 << job.coinbase2;
+        coinbasebuf << job->coinbase1 << _extranonce << extranonce2 << job->coinbase2;
         coinbasebuf >> coinbasetx;
         
         // Set coinbase tx
@@ -224,9 +224,9 @@ namespace Stratum
         BigInt target(Util::BinToASCII(Util::Reverse(hash)), 16);
         
         // Check if difficulty meets job diff
-        if (target > job.jobTarget) {
+        if (target > job->jobTarget) {
             sLog.Warn(LOG_STRATUM, "%s: Share above target", username.c_str());
-            DataMgr::Instance()->Push(Share(_ip, username, false, "Share above target", Util::Date(), job.diff));
+            DataMgr::Instance()->Push(Share(_ip, username, false, "Share above target", Util::Date(), job->diff));
             _shareLimiter.LogBad();
             
             JSON response;
@@ -240,11 +240,11 @@ namespace Stratum
         }
         
         // Check if block meets criteria
-        if (target <= job.blockTarget) {
+        if (target <= job->blockTarget) {
             sLog.Info(LOG_STRATUM, "We have found a block candidate!");
             
             // copy job diff because job will be deleted after submiting share by block template update
-            uint64 jobDiff = job.diff;
+            uint64 jobDiff = job->diff;
             
             if (_server->SubmitBlock(block)) {
                 std::string query("INSERT INTO `shares` (`rem_host`, `username`, `our_result`, `upstream_result`, `reason`, `solution`, `time`, `difficulty`) VALUES ");
@@ -259,7 +259,7 @@ namespace Stratum
                 return;
             }
         } else {
-            DataMgr::Instance()->Push(Share(_ip, username, true, "", Util::Date(), job.diff));
+            DataMgr::Instance()->Push(Share(_ip, username, true, "", Util::Date(), job->diff));
             
             JSON response;
             response["id"] = msg["id"];
@@ -330,17 +330,17 @@ namespace Stratum
         }
     }
     
-    Job Client::GetJob()
+    Job* Client::GetJob()
     {
-        Job job;
-        job.block = _server->GetWork();
-        job.diff = _diff;
-        job.jobTarget = Bitcoin::DiffToTarget(job.diff);
-        job.blockTarget = Bitcoin::TargetFromBits(job.block->bits);
+        Job* job = new Job();
+        job->block = _server->GetWork();
+        job->diff = _diff;
+        job->jobTarget = Bitcoin::DiffToTarget(job->diff);
+        job->blockTarget = Bitcoin::TargetFromBits(job->block->bits);
         
         // Serialize transaction
         ByteBuffer coinbasebuf;
-        coinbasebuf << job.block->tx[0];
+        coinbasebuf << job->block->tx[0];
         BinaryData coinbase = coinbasebuf.Binary();
         
         // Split coinbase
@@ -350,8 +350,8 @@ namespace Stratum
         // tx.script (varint)           - 2 bytes
         // tx.script (block height)     - 4 bytes
         uint32 cbsplit = 4 + 32 + 4 + 2 + 4;
-        job.coinbase1 = BinaryData(coinbase.begin(), coinbase.begin() + cbsplit);
-        job.coinbase2 = BinaryData(coinbase.begin() + cbsplit + 8, coinbase.end()); // plus extranonce size
+        job->coinbase1 = BinaryData(coinbase.begin(), coinbase.begin() + cbsplit);
+        job->coinbase2 = BinaryData(coinbase.begin() + cbsplit + 8, coinbase.end()); // plus extranonce size
         
         return job;
     }
